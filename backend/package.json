@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "postinstall": "prisma generate --schema ../prisma/schema.prisma",
+    "postinstall": "sh generate-prisma.sh",
     "start": "node dist/index.js",
     "lint": "tsc --noEmit",
     "seed": "ts-node --compiler-options '{\"module\":\"commonjs\"}' ../prisma/seed.ts"
