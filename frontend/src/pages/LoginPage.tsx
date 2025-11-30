@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'
+import { NavigationBar } from '../components/NavigationBar'
+import { MyNestLogo } from '../components/MyNestLogo'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -50,14 +52,14 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background">
+      <NavigationBar />
+      <div className="flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-lg bg-sage flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">MN</span>
-            </div>
+            <MyNestLogo className="w-12 h-12" />
             <h1 className="text-3xl font-semibold text-brown">MyNest</h1>
           </div>
           <div className="mb-6">
@@ -192,6 +194,7 @@ export function LoginPage() {
               Create New Account
             </Link>
           </div>
+        </div>
         </div>
       </div>
     </div>
