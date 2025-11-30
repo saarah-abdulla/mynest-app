@@ -1,5 +1,19 @@
 # 🚀 Quick Deployment Guide
 
+## Prerequisites
+
+**Before deploying, push your code to GitHub:**
+1. See `docs/github-setup.md` for instructions
+2. Or run:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   # Create repo on GitHub, then:
+   git remote add origin https://github.com/YOUR_USERNAME/mynest-app.git
+   git push -u origin main
+   ```
+
 ## Fastest Path to Deploy
 
 ### 1. Backend → Railway (5 minutes)
