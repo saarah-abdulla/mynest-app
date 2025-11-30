@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { NavigationBar } from '../components/NavigationBar'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../lib/api'

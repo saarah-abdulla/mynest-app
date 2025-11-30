@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { NavigationBar } from '../components/NavigationBar'
 import { useChildren, useCaregivers, useFamilies } from '../hooks/useApiData'
 import { LoadingSpinner } from '../components/LoadingSpinner'

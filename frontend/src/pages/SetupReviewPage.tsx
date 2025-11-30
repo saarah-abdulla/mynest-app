@@ -104,9 +104,9 @@ export function SetupReviewPage() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              fullName: `${caregiver.firstName} ${caregiver.lastName}`,
+              fullName: caregiver.fullName,
               phone: caregiver.phone || undefined,
-              notes: `Relationship: ${caregiver.relationship}${caregiver.email ? ` | Email: ${caregiver.email}` : ''}`,
+              notes: caregiver.email ? `Email: ${caregiver.email}` : undefined,
               familyId: family.id,
             }),
           })
@@ -228,11 +228,12 @@ export function SetupReviewPage() {
                 {caregivers.map((caregiver: Caregiver, index: number) => (
                   <div key={index} className="p-3 bg-background rounded-lg">
                     <p className="font-semibold text-brown">
-                      {caregiver.firstName} {caregiver.lastName}
+                      {caregiver.fullName}
                     </p>
                     <p className="text-sm text-brown/70">
-                      {caregiver.email} • {caregiver.relationship}
-                      {caregiver.phone && ` • ${caregiver.phone}`}
+                      {caregiver.email && `${caregiver.email}`}
+                      {caregiver.email && caregiver.phone && ' • '}
+                      {caregiver.phone && caregiver.phone}
                     </p>
                   </div>
                 ))}

@@ -52,7 +52,7 @@ export function SignupPage() {
 
     try {
       setLoading(true)
-      const userCredential = await signup(email, password)
+      await signup(email, password)
       
       // Wait a moment for Firebase to initialize
       await new Promise(resolve => setTimeout(resolve, 1000))
