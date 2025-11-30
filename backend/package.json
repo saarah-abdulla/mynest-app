@@ -6,7 +6,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.json",
     "postinstall": "sh generate-prisma.sh",
+    "migrate": "npx prisma migrate deploy --schema=prisma/schema.prisma",
     "start": "node dist/index.js",
+    "start:migrate": "npx prisma migrate deploy --schema=prisma/schema.prisma && node dist/index.js",
     "lint": "tsc --noEmit",
     "seed": "ts-node --compiler-options '{\"module\":\"commonjs\"}' ../prisma/seed.ts"
   },
