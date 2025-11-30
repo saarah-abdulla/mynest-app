@@ -14,6 +14,7 @@ import { SetupCaregiversPage } from './pages/SetupCaregiversPage'
 import { SetupReviewPage } from './pages/SetupReviewPage'
 import { LandingPage } from './pages/LandingPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
+import { SetupProfilePage } from './pages/SetupProfilePage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAuth } from './contexts/AuthContext'
 import { LoadingSpinner } from './components/LoadingSpinner'
@@ -34,6 +35,14 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route
+        path="/setup/profile"
+        element={
+          <ProtectedRoute>
+            <SetupProfilePage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/invite/:token" element={<InvitationPage />} />
       <Route
         path="/dashboard"

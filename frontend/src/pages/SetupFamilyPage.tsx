@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export function SetupFamilyPage() {
   const [familyName, setFamilyName] = useState('')
@@ -9,15 +9,6 @@ export function SetupFamilyPage() {
   const [state, setState] = useState('')
   const [zipCode, setZipCode] = useState('')
   const navigate = useNavigate()
-  const location = useLocation()
-  const [showVerificationNotice, setShowVerificationNotice] = useState(false)
-
-  useEffect(() => {
-    // Check if we came from signup with verification email sent
-    if (location.state?.emailVerificationSent) {
-      setShowVerificationNotice(true)
-    }
-  }, [location.state])
 
   function handleNext() {
     // Save family data (will be sent to backend in step 3)

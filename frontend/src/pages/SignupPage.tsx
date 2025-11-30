@@ -95,22 +95,13 @@ export function SignupPage() {
         }
       }
       
-      // No invitation - regular parent signup, create user record
-      try {
-        await api.createUser({
-          email: email,
-          displayName: email.split('@')[0],
-          role: 'parent',
-        })
-      } catch (userErr) {
-        console.log('User record may already exist or creation failed:', userErr)
-        // Continue anyway - user record might already exist
-      }
+      // No invitation - regular parent signup, redirect to profile setup
+      // Don't create user record yet - let them set it up in profile page
       
       // Show success message about email verification
       setError('')
-      // Navigate to a verification notice page or show message
-      navigate('/setup/family', { 
+      // Navigate to profile setup first
+      navigate('/setup/profile', { 
         state: { 
           emailVerificationSent: true,
           email: email 
