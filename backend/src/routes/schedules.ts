@@ -10,15 +10,9 @@ const scheduleSchema = z.object({
   category: z.enum([
     'school',
     'activity',
-    'meal',
-    'medication',
-    'sleep',
     'medical',
     'appointment',
     'social',
-    'play',
-    'feeding',
-    'nap',
     'other',
   ]),
   location: z.string().optional(),
@@ -50,7 +44,7 @@ router.get(
         where: { familyId },
         select: { id: true },
       })
-      const childIds = children.map((c) => c.id)
+      const childIds = children.map((c: { id: string }) => c.id)
       where = { childId: { in: childIds } }
     } else {
       // Authenticated user without a family should not see any schedule entries
@@ -63,7 +57,7 @@ router.get(
       orderBy: { startTime: 'asc' },
     })
     // Transform to match frontend type
-    const transformed = entries.map((entry) => ({
+    const transformed = entries.map((entry: { id: string; childId: string; title: string; category: string; location: string | null; startTime: Date; endTime: Date; notes: string | null; createdById: string }) => ({
       id: entry.id,
       childId: entry.childId,
       title: entry.title,

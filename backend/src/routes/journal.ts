@@ -43,7 +43,7 @@ router.get(
         where: { familyId },
         select: { id: true },
       })
-      const childIds = children.map((c) => c.id)
+      const childIds = children.map((c: { id: string }) => c.id)
       where = { childId: { in: childIds } }
     } else {
       // No familyId means no entries
@@ -60,7 +60,7 @@ router.get(
     console.log(`[journal] Found ${entries.length} entries`)
     
     // Transform to match frontend type
-    const transformed = entries.map((entry) => ({
+    const transformed = entries.map((entry: { id: string; childId: string; authorId: string; note: string; mood: string | null; moodDetails: string | null; meals: any; naps: any; activities: any; medication: any; createdAt: Date }) => ({
       id: entry.id,
       childId: entry.childId,
       authorId: entry.authorId,
@@ -215,7 +215,7 @@ router.put(
         
         // Update the note to reflect the new status
         const noteLines = entry.note.split('\n')
-        const statusLineIndex = noteLines.findIndex(line => line.startsWith('Status:'))
+        const statusLineIndex = noteLines.findIndex((line: string) => line.startsWith('Status:'))
         if (statusLineIndex >= 0) {
           noteLines[statusLineIndex] = `Status: ${newStatus || existingMed.status}`
         } else {
@@ -226,7 +226,7 @@ router.put(
         if (newStatus === 'given' && newMed?.givenDate) {
           const givenTime = newMed?.givenTime ? ` at ${newMed.givenTime}` : ''
           const givenLine = `Given: ${newMed.givenDate}${givenTime}`
-          const givenLineIndex = noteLines.findIndex(line => line.startsWith('Given:'))
+          const givenLineIndex = noteLines.findIndex((line: string) => line.startsWith('Given:'))
           if (givenLineIndex >= 0) {
             noteLines[givenLineIndex] = givenLine
           } else {

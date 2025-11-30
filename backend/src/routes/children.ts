@@ -56,7 +56,7 @@ router.get(
     })
     console.log(`[children] Found ${children.length} children`)
     // Transform to match frontend type
-    const transformed = children.map((child) => ({
+    const transformed = children.map((child: { id: string; firstName: string; lastName: string; fullName: string | null; birthdate: Date; gender: string | null; school: string | null; familyId: string; createdAt: Date; caregivers: Array<{ caregiver: { id: string; fullName: string; phone: string | null; notes: string | null; familyId: string; createdAt: Date } }> }) => ({
       id: child.id,
       firstName: child.firstName,
       lastName: child.lastName,
@@ -65,7 +65,7 @@ router.get(
       gender: child.gender,
       school: child.school,
       familyId: child.familyId,
-      caregivers: child.caregivers.map((cc) => ({
+      caregivers: child.caregivers.map((cc: { caregiver: { id: string; fullName: string; phone: string | null; notes: string | null; familyId: string; createdAt: Date } }) => ({
         id: cc.caregiver.id,
         fullName: cc.caregiver.fullName,
         phone: cc.caregiver.phone,

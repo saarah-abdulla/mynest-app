@@ -60,7 +60,7 @@ router.get(
       console.log(`[caregivers] Found ${caregivers.length} caregivers`)
       
       // Transform to match frontend type
-      const transformed = caregivers.map((caregiver) => ({
+      const transformed = caregivers.map((caregiver: { id: string; fullName: string; email: string | null; phone: string | null; notes: string | null; familyId: string; createdAt: Date }) => ({
         id: caregiver.id,
         fullName: caregiver.fullName,
         email: caregiver.email || undefined,
@@ -87,7 +87,7 @@ router.get(
               createdAt: true,
             },
           })
-          const transformed = caregivers.map((caregiver) => ({
+          const transformed = caregivers.map((caregiver: { id: string; fullName: string; phone: string | null; notes: string | null; familyId: string; createdAt: Date }) => ({
             id: caregiver.id,
             fullName: caregiver.fullName,
             phone: caregiver.phone || undefined,
