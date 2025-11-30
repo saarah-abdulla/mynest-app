@@ -8,6 +8,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 
 export function SetupProfilePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { currentUser } = useAuth()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -18,8 +19,7 @@ export function SetupProfilePage() {
 
   useEffect(() => {
     // Check if we came from signup with verification email sent
-    const locationState = (window.history.state && window.history.state.usr) || {}
-    if (locationState.emailVerificationSent) {
+    if (location.state?.emailVerificationSent) {
       setEmailVerificationSent(true)
     }
 
