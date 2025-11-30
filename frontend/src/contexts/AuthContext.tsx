@@ -7,6 +7,7 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  sendEmailVerification,
 } from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { auth } from '../lib/firebase'
@@ -15,7 +16,7 @@ interface AuthContextType {
   currentUser: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string) => Promise<{ user: User }>
+  signup: (email: string, password: string, sendVerification?: boolean) => Promise<{ user: User }>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -34,10 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  function signup(email: string, password: string) {
-    return createUserWithEmailAndPassword(auth, email, password).then((userCredential) => ({
-      user: userCredential.user,
-    }))
+  async function signup(email: string, password: string, sendVerification: boolean = true) {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    
+    // Send verification email if requested
+    if (sendVerification && userCredential.user) {
+      try {
+        await sendEmailVerification(userCredential.user)
+        console.log('Verification email sent')
+      } catch (error) {
+        console.error('Failed to send verification email:', error)
+        // Don't fail signup if email sending fails
+      }
+    }
+    
+    return { user: userCredential.user }
   }
 
   function login(email: string, password: string) {

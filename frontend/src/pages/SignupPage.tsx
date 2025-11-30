@@ -54,7 +54,7 @@ export function SignupPage() {
 
     try {
       setLoading(true)
-      await signup(email, password)
+      await signup(email, password, true) // Send verification email
       
       // Wait a moment for Firebase to initialize
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -107,7 +107,15 @@ export function SignupPage() {
         // Continue anyway - user record might already exist
       }
       
-      navigate('/setup/family')
+      // Show success message about email verification
+      setError('')
+      // Navigate to a verification notice page or show message
+      navigate('/setup/family', { 
+        state: { 
+          emailVerificationSent: true,
+          email: email 
+        } 
+      })
     } catch (err: any) {
       setError(err.message || 'Failed to create account')
     } finally {

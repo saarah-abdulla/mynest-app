@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export function SetupFamilyPage() {
   const [familyName, setFamilyName] = useState('')
@@ -9,6 +9,15 @@ export function SetupFamilyPage() {
   const [state, setState] = useState('')
   const [zipCode, setZipCode] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
+  const [showVerificationNotice, setShowVerificationNotice] = useState(false)
+
+  useEffect(() => {
+    // Check if we came from signup with verification email sent
+    if (location.state?.emailVerificationSent) {
+      setShowVerificationNotice(true)
+    }
+  }, [location.state])
 
   function handleNext() {
     // Save family data (will be sent to backend in step 3)
@@ -39,6 +48,31 @@ export function SetupFamilyPage() {
           </div>
           <p className="text-sm font-semibold text-brown ml-4">25% Complete</p>
         </div>
+
+        {/* Email Verification Notice */}
+        {showVerificationNotice && (
+          <div className="bg-sage/10 border border-sage rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-sage mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-brown mb-1">Verification email sent!</p>
+                <p className="text-sm text-brown/70">
+                  We've sent a verification email to <strong>{location.state?.email}</strong>. Please check your inbox and verify your email address to complete your account setup.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowVerificationNotice(false)}
+                className="text-brown/60 hover:text-brown"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Main Card - More Compact */}
         <div className="bg-card rounded-2xl p-6 shadow-card border border-brown/10 mb-6">
