@@ -12,6 +12,7 @@ import { SetupFamilyPage } from './pages/SetupFamilyPage'
 import { SetupChildrenPage } from './pages/SetupChildrenPage'
 import { SetupCaregiversPage } from './pages/SetupCaregiversPage'
 import { SetupReviewPage } from './pages/SetupReviewPage'
+import { LandingPage } from './pages/LandingPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAuth } from './contexts/AuthContext'
 import { LoadingSpinner } from './components/LoadingSpinner'
@@ -104,7 +105,7 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<LandingPage />} />
     </Routes>
   )
 }
