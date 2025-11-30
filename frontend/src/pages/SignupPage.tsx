@@ -81,7 +81,6 @@ export function SignupPage() {
           // If invitation acceptance fails, create basic user record and redirect to invitation page
           try {
             await api.createUser({
-              firebaseUid: userCredential.user.uid,
               email: email,
               displayName: email.split('@')[0],
               role: 'parent',
@@ -97,7 +96,6 @@ export function SignupPage() {
       // No invitation - regular parent signup, create user record
       try {
         await api.createUser({
-          firebaseUid: userCredential.user.uid,
           email: email,
           displayName: email.split('@')[0],
           role: 'parent',

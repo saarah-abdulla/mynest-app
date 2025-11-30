@@ -12,7 +12,6 @@ import { useAuth } from '../contexts/AuthContext'
 import type { Child, Caregiver } from '../types/entities'
 
 export function FamilyPage() {
-  const navigate = useNavigate()
   const { currentUser } = useAuth()
   const { families, loading: familiesLoading } = useFamilies()
   const { children, loading: childrenLoading, error: childrenError, refetch: refetchChildren } =

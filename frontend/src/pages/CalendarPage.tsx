@@ -1,14 +1,12 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useScheduleEntries, useChildren } from '../hooks/useApiData'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { NavigationBar } from '../components/NavigationBar'
 import { EventFormModal } from '../components/EventFormModal'
-import type { ScheduleEntry, Child } from '../types/entities'
+import type { ScheduleEntry } from '../types/entities'
 
 export function CalendarPage() {
-  const navigate = useNavigate()
   const { entries: scheduleEntries, loading, error, refetch } = useScheduleEntries()
   const { children } = useChildren()
 
@@ -17,7 +15,6 @@ export function CalendarPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEntry | null>(null)
   const [eventModalOpen, setEventModalOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'month' | 'day'>('month')
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -130,9 +127,6 @@ export function CalendarPage() {
     return colors[category] || 'bg-gray-200 text-gray-800'
   }
 
-  const getChildName = (childId: string) => {
-    return children.find((c) => c.id === childId)?.fullName || 'Unknown'
-  }
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)

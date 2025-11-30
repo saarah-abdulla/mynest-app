@@ -9,7 +9,6 @@ import { formatDateDDMMYYYY } from '../lib/dateUtils'
 import type { User } from '../types/entities'
 
 export function ProfilePage() {
-  const navigate = useNavigate()
   const { currentUser } = useAuth()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)

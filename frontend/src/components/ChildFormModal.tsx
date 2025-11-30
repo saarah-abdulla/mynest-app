@@ -60,6 +60,7 @@ export function ChildFormModal({ isOpen, onClose, child, onSuccess }: ChildFormM
       const data = {
         firstName,
         lastName,
+        fullName: `${firstName} ${lastName}`.trim(),
         birthdate: new Date(birthdate).toISOString(),
         gender,
         school: school || undefined,

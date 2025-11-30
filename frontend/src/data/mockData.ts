@@ -56,8 +56,11 @@ export const mockCaregivers: Caregiver[] = [
 export const mockChildren: Child[] = [
   {
     id: 'child_001',
+    firstName: 'Bader',
+    lastName: 'Hussein',
     fullName: 'Bader Hussein',
     birthdate: '2018-06-15', // 6 years old
+    gender: 'male',
     school: 'school_age',
     familyId: mockFamily.id,
     caregivers: mockCaregivers,
@@ -65,8 +68,11 @@ export const mockChildren: Child[] = [
   },
   {
     id: 'child_002',
+    firstName: 'Adam',
+    lastName: 'Hussein',
     fullName: 'Adam Hussein',
     birthdate: '2019-08-20', // 5 years old
+    gender: 'male',
     school: 'school_age',
     familyId: mockFamily.id,
     caregivers: mockCaregivers,

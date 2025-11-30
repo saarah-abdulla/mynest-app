@@ -3,12 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { LoadingSpinner } from '../components/LoadingSpinner'
-import { ErrorMessage } from '../components/ErrorMessage'
 
 export function InvitationPage() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
-  const { currentUser, login } = useAuth()
+  const { currentUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(false)
   const [error, setError] = useState<string | null>(null)

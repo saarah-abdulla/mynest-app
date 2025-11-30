@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-
+import type { Caregiver } from '../types/entities'
 
 export function SetupReviewPage() {
   const [setupData, setSetupData] = useState<any>(null)
