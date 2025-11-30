@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(cuid())
+  firebaseUid  String          @unique
+  email        String          @unique
+  displayName  String
+  role         Role
+  phone        String?
+  familyId     String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  caregiver    Caregiver?
+  journalNotes JournalEntry[]  @relation("JournalAuthor")
+  scheduleLogs ScheduleEntry[] @relation("ScheduleAuthor")
+  family       Family?         @relation(fields: [familyId], references: [id])
+}
+
+model Family {
+  id          String       @id @default(cuid())
+  name        String
+  region      String
+  timezone    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  caregivers  Caregiver[]
+  children    Child[]
+  invitations Invitation[]
+  users       User[]
+}
+
+model Caregiver {
+  id          String           @id @default(cuid())
+  fullName    String
+  phone       String?
+  notes       String?
+  familyId    String
+  userId      String?          @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  email       String?
+  family      Family           @relation(fields: [familyId], references: [id])
+  user        User?            @relation(fields: [userId], references: [id])
+  assignments ChildCaregiver[]
+  invitation  Invitation?
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  email       String
+  caregiverId String    @unique
+  familyId    String
+  invitedBy   String
+  status      String    @default("pending")
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  family      Family    @relation(fields: [familyId], references: [id])
+
+  @@index([token])
+  @@index([email])
+}
+
+model Child {
+  id         String           @id @default(cuid())
+  fullName   String
+  birthdate  DateTime
+  school     String?
+  familyId   String
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  firstName  String
+  lastName   String
+  gender     String?
+  family     Family           @relation(fields: [familyId], references: [id])
+  caregivers ChildCaregiver[]
+  journal    JournalEntry[]
+  schedule   ScheduleEntry[]
+}
+
+model ChildCaregiver {
+  childId     String
+  caregiverId String
+  assignedAt  DateTime  @default(now())
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id])
+  child       Child     @relation(fields: [childId], references: [id])
+
+  @@id([childId, caregiverId])
+}
+
+model ScheduleEntry {
+  id          String           @id @default(cuid())
+  title       String
+  category    ScheduleCategory
+  notes       String?
+  startTime   DateTime
+  endTime     DateTime
+  childId     String
+  createdById String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  location    String?
+  child       Child            @relation(fields: [childId], references: [id])
+  createdBy   User             @relation("ScheduleAuthor", fields: [createdById], references: [id])
+}
+
+model JournalEntry {
+  id          String     @id @default(cuid())
+  note        String
+  mood        ChildMood?
+  moodDetails String?
+  meals       Json?
+  naps        Json?
+  activities  Json?
+  medication  Json?
+  childId     String
+  authorId    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  author      User       @relation("JournalAuthor", fields: [authorId], references: [id])
+  child       Child      @relation(fields: [childId], references: [id])
+}
+
+enum Role {
+  parent
+  caregiver
+}
+
+enum ScheduleCategory {
+  school
+  activity
+  other
+  medical
+  appointment
+  social
+}
+
+enum ChildMood {
+  happy
+  calm
+  tired
+  fussy
+}
