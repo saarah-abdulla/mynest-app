@@ -30,15 +30,14 @@ export function SetupProfilePage() {
 
     // Try to load existing user data
     async function loadUserData() {
-      if (!currentUser) return
+      if (!currentUser || !currentUser.email) return
 
       try {
         setLoading(true)
-        const token = await currentUser.getIdToken()
         const users = await api.listUsers()
         const user = users.find((u) => u.email === currentUser.email)
         
-        if (user) {
+        if (user && currentUser.email) {
           setDisplayName(user.displayName || currentUser.email.split('@')[0])
           setPhone(user.phone || '')
         }
@@ -68,7 +67,6 @@ export function SetupProfilePage() {
 
     try {
       setSaving(true)
-      const token = await currentUser.getIdToken()
 
       // Create or update user record
       try {
@@ -113,7 +111,6 @@ export function SetupProfilePage() {
 
     try {
       setSaving(true)
-      const token = await currentUser.getIdToken()
 
       // Create minimal user record
       try {
