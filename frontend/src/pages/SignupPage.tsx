@@ -111,9 +111,6 @@ export function SignupPage() {
       // Show success message about email verification
       setError('')
       // Navigate to profile setup first - use replace to prevent back navigation
-      // Use window.location to ensure a full navigation
-      window.location.href = '/setup/profile'
-      // Also try programmatic navigation as fallback
       navigate('/setup/profile', { 
         replace: true,
         state: { 
