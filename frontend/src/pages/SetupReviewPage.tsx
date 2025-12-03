@@ -40,13 +40,39 @@ export function SetupReviewPage() {
       // Create or update user record with familyId
       // POST will handle both create and update
       try {
-        await api.createUser({
-          firebaseUid: currentUser.uid,
-          email: currentUser.email || '',
-          displayName: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
-          role: 'parent',
-          familyId: family.id,
-        })
+        // First try to get existing user
+        const users = await api.listUsers()
+        const existingUser = users.find((u) => u.email === currentUser.email)
+        
+        if (existingUser) {
+          // Update existing user with familyId
+          await api.updateUser(existingUser.id, {
+            familyId: family.id,
+          })
+        } else {
+          // Create new user (but api.createUser doesn't accept firebaseUid directly)
+          // The backend should handle this via the auth middleware
+          // For now, we'll just update the user if they exist after creation
+          try {
+            await api.createUser({
+              email: currentUser.email || '',
+              displayName: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
+              role: 'parent',
+              familyId: family.id,
+            })
+          } catch (createErr: any) {
+            // If creation fails, try to find and update
+            const usersAfter = await api.listUsers()
+            const userAfter = usersAfter.find((u) => u.email === currentUser.email)
+            if (userAfter) {
+              await api.updateUser(userAfter.id, {
+                familyId: family.id,
+              })
+            } else {
+              throw createErr
+            }
+          }
+        }
       } catch (userErr: any) {
         // User might already exist, try to update
         if (userErr.message?.includes('already exists') || userErr.message?.includes('unique')) {
@@ -69,6 +95,7 @@ export function SetupReviewPage() {
             await api.createChild({
               firstName: child.firstName,
               lastName: child.lastName,
+              fullName: `${child.firstName} ${child.lastName}`.trim(),
               birthdate: child.dateOfBirth,
               gender: child.gender,
               school: '',
