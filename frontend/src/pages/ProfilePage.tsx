@@ -29,14 +29,35 @@ export function ProfilePage() {
         setLoading(true)
         setError(null)
         const users = await api.listUsers()
-        const currentUserData = users.find((u) => u.email === currentUser.email)
+        let currentUserData = users.find((u) => u.email === currentUser.email)
+        
+        // If user doesn't exist, create a minimal user record
+        if (!currentUserData) {
+          try {
+            console.log('User record not found, creating one...')
+            currentUserData = await api.createUser({
+              email: currentUser.email || '',
+              displayName: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
+              role: 'parent',
+            })
+            console.log('User record created:', currentUserData)
+          } catch (createErr: any) {
+            // If creation fails, try to fetch again (might have been created by another request)
+            const usersAfter = await api.listUsers()
+            currentUserData = usersAfter.find((u) => u.email === currentUser.email)
+            if (!currentUserData) {
+              throw new Error(createErr.message || 'Failed to create user profile')
+            }
+          }
+        }
+        
         if (currentUserData) {
           setUser(currentUserData)
           setDisplayName(currentUserData.displayName)
           setPhone(currentUserData.phone || '')
           setEmail(currentUserData.email)
         } else {
-          setError('User profile not found')
+          setError('User profile not found and could not be created')
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile')
