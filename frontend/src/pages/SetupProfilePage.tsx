@@ -43,12 +43,14 @@ export function SetupProfilePage() {
           setDisplayName(user.displayName || currentUser.email.split('@')[0])
           setPhone(user.phone || '')
           
-          // If user already has a family, they shouldn't be on this page
-          // Redirect them to dashboard or family setup
-          if (user.familyId) {
-            navigate('/dashboard')
+          // Only redirect if user already has a family AND a displayName
+          // This allows users to complete profile setup even if they somehow got here
+          if (user.familyId && user.displayName && user.displayName !== currentUser.email.split('@')[0]) {
+            // User has completed setup, redirect to dashboard
+            navigate('/dashboard', { replace: true })
             return
           }
+          // Otherwise, allow them to stay and complete/edit their profile
         }
       } catch (err) {
         console.log('Could not load user data:', err)

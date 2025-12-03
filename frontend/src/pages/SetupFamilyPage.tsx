@@ -162,16 +162,16 @@ export function SetupFamilyPage() {
 
         {/* Bottom Navigation Bar - Fixed at bottom */}
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-brown/10 px-4 py-4 shadow-lg">
-          <div className="max-w-3xl mx-auto flex justify-between items-center">
+          <div className="max-w-3xl mx-auto flex justify-between items-center gap-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-2.5 rounded-lg border border-brown/20 bg-card text-brown/80 font-medium hover:bg-brown/5 hover:text-brown transition-colors flex items-center gap-2"
+              className="px-6 py-2.5 rounded-lg bg-coral text-white font-semibold hover:bg-coral/90 transition-colors flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
               Skip for Now
