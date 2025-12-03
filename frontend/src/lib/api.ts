@@ -40,7 +40,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       // Network error - could be CORS, connection refused, etc.
       if (err.message.includes('fetch') || err.message.includes('Failed to fetch')) {
         console.error('Network error connecting to:', url)
-        throw new Error('Unable to connect to the server. Please make sure the backend is running at http://localhost:4000')
+        const isLocalhost = url.includes('localhost')
+        if (isLocalhost) {
+          throw new Error('Unable to connect to the server. Please make sure the backend is running at http://localhost:4000, or set VITE_API_BASE_URL in Vercel environment variables to your Railway backend URL.')
+        } else {
+          throw new Error(`Unable to connect to the backend at ${url}. Please check that:\n1. The backend is running on Railway\n2. VITE_API_BASE_URL is set correctly in Vercel\n3. CORS is configured to allow your Vercel domain`)
+        }
       }
     }
     // Re-throw other errors as-is
