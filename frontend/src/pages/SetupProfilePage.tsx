@@ -30,7 +30,10 @@ export function SetupProfilePage() {
 
     // Try to load existing user data
     async function loadUserData() {
-      if (!currentUser || !currentUser.email) return
+      if (!currentUser || !currentUser.email) {
+        setLoading(false)
+        return
+      }
 
       try {
         setLoading(true)
@@ -43,17 +46,20 @@ export function SetupProfilePage() {
           setDisplayName(user.displayName || currentUser.email.split('@')[0])
           setPhone(user.phone || '')
           
-          // Only redirect if user already has a family AND a displayName
+          // Only redirect if user already has a family AND a proper displayName (not just email prefix)
           // This allows users to complete profile setup even if they somehow got here
-          if (user.familyId && user.displayName && user.displayName !== currentUser.email.split('@')[0]) {
+          const emailPrefix = currentUser.email.split('@')[0]
+          if (user.familyId && user.displayName && user.displayName !== emailPrefix && user.displayName.length > emailPrefix.length) {
             // User has completed setup, redirect to dashboard
             navigate('/dashboard', { replace: true })
             return
           }
           // Otherwise, allow them to stay and complete/edit their profile
         }
+        // If no user found, that's fine - they'll create one when they submit
       } catch (err) {
         console.log('Could not load user data:', err)
+        // Don't redirect on error - let them try to create the profile
       } finally {
         setLoading(false)
       }

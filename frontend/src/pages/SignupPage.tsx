@@ -61,7 +61,13 @@ export function SignupPage() {
       }
       
       // Wait a moment for Firebase to initialize and ensure user is set
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Give it enough time for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Double-check that currentUser is set
+      if (!user.uid) {
+        throw new Error('User account created but user ID not available')
+      }
       
       // Check for pending invitation by email (even if no token in URL)
       let invitationToAccept = invitationToken
@@ -105,6 +111,9 @@ export function SignupPage() {
       // Show success message about email verification
       setError('')
       // Navigate to profile setup first - use replace to prevent back navigation
+      // Use window.location to ensure a full navigation
+      window.location.href = '/setup/profile'
+      // Also try programmatic navigation as fallback
       navigate('/setup/profile', { 
         replace: true,
         state: { 

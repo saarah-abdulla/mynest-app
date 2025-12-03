@@ -161,11 +161,12 @@ export function SetupFamilyPage() {
         </div>
 
         {/* Bottom Navigation Bar - Fixed at bottom */}
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-brown/10 px-4 py-4 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-brown/10 px-4 py-4 shadow-lg z-50">
           <div className="max-w-3xl mx-auto flex justify-between items-center gap-4">
             <button
+              type="button"
               onClick={() => navigate('/dashboard')}
-              className="px-6 py-2.5 rounded-lg bg-coral text-white font-semibold hover:bg-coral/90 transition-colors flex items-center gap-2"
+              className="px-6 py-2.5 rounded-lg bg-coral text-white font-semibold hover:bg-coral/90 transition-colors flex items-center gap-2 flex-shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path
@@ -177,9 +178,10 @@ export function SetupFamilyPage() {
               Skip for Now
             </button>
             <button
+              type="button"
               onClick={handleNext}
               disabled={!familyName}
-              className="px-6 py-2.5 rounded-lg bg-sage text-white font-semibold hover:bg-sage-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2.5 rounded-lg bg-sage text-white font-semibold hover:bg-sage-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0"
             >
               Next
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
