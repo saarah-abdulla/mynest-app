@@ -6,7 +6,6 @@ import { asyncHandler } from '../middleware/asyncHandler'
 const router = Router()
 
 const userSchema = z.object({
-  firebaseUid: z.string().min(4),
   email: z.string().email(),
   displayName: z.string().min(2),
   role: z.enum(['parent', 'caregiver']),
@@ -70,18 +69,29 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
+    const authUser = (req as Request & { user?: { uid: string } }).user
+    
+    if (!authUser?.uid) {
+      return res.status(401).json({ error: 'Unauthorized - Firebase token required' })
+    }
+    
     const data = userSchema.parse(req.body)
+    const firebaseUid = authUser.uid
+    
     // Check if user already exists
     const existing = await prisma.user.findUnique({
-      where: { firebaseUid: data.firebaseUid },
+      where: { firebaseUid },
     })
     
     if (existing) {
       // Update existing user (especially familyId if provided)
       const updated = await prisma.user.update({
-        where: { firebaseUid: data.firebaseUid },
+        where: { firebaseUid },
         data: {
-          ...data,
+          email: data.email,
+          displayName: data.displayName,
+          role: data.role,
+          phone: data.phone,
           // Always update familyId if provided, even if user exists
           familyId: data.familyId || existing.familyId,
         },
@@ -89,8 +99,13 @@ router.post(
       return res.json(updated)
     }
     
-    // Create new user
-    const created = await prisma.user.create({ data })
+    // Create new user with firebaseUid from token
+    const created = await prisma.user.create({ 
+      data: {
+        ...data,
+        firebaseUid,
+      }
+    })
     res.status(201).json(created)
   }),
 )
