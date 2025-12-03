@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { api } from '../lib/api'
 import type { Caregiver } from '../types/entities'
 
 export function SetupReviewPage() {
   const [setupData, setSetupData] = useState<any>(null)
   const [caregivers, setCaregivers] = useState<Caregiver[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const { currentUser } = useAuth()
 
@@ -26,99 +28,86 @@ export function SetupReviewPage() {
 
     try {
       setLoading(true)
-      
-      // Get Firebase token for authenticated request
-      const token = await currentUser.getIdToken()
+      setError(null)
       
       // Create family in backend
-      const family = await fetch('http://localhost:4000/api/families', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: setupData.name,
-          region: setupData.address?.city || 'Dubai, UAE',
-          timezone: 'Asia/Dubai',
-        }),
-      }).then((res) => {
-        if (!res.ok) throw new Error('Failed to create family')
-        return res.json()
+      const family = await api.createFamily({
+        name: setupData.name,
+        region: setupData.address?.city || 'Dubai, UAE',
+        timezone: 'Asia/Dubai',
       })
 
       // Create or update user record with familyId
       // POST will handle both create and update
-      const userResponse = await fetch('http://localhost:4000/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      try {
+        await api.createUser({
           firebaseUid: currentUser.uid,
           email: currentUser.email || '',
           displayName: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
           role: 'parent',
           familyId: family.id,
-        }),
-      })
-      
-      if (!userResponse.ok) {
-        const error = await userResponse.json().catch(() => ({}))
-        console.error('Failed to create/update user:', error)
-        throw new Error(error.error || 'Failed to create user record')
+        })
+      } catch (userErr: any) {
+        // User might already exist, try to update
+        if (userErr.message?.includes('already exists') || userErr.message?.includes('unique')) {
+          const users = await api.listUsers()
+          const existingUser = users.find((u) => u.email === currentUser.email)
+          if (existingUser) {
+            await api.updateUser(existingUser.id, {
+              familyId: family.id,
+            })
+          }
+        } else {
+          throw userErr
+        }
       }
-      
-      const userData = await userResponse.json()
-      console.log('User record created/updated:', userData)
 
       // Create children
       if (setupData.children && setupData.children.length > 0) {
         for (const child of setupData.children) {
-          await fetch('http://localhost:4000/api/children', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
+          try {
+            await api.createChild({
               firstName: child.firstName,
               lastName: child.lastName,
               birthdate: child.dateOfBirth,
               gender: child.gender,
               school: '',
               familyId: family.id,
-            }),
-          })
+            })
+          } catch (childErr) {
+            console.error('Error creating child:', childErr)
+            // Continue with other children even if one fails
+          }
         }
       }
 
       // Create caregivers
       if (caregivers && caregivers.length > 0) {
         for (const caregiver of caregivers) {
-          await fetch('http://localhost:4000/api/caregivers', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
+          try {
+            await api.createCaregiver({
               fullName: caregiver.fullName,
               phone: caregiver.phone || undefined,
+              email: caregiver.email || undefined,
               notes: caregiver.email ? `Email: ${caregiver.email}` : undefined,
               familyId: family.id,
-            }),
-          })
+            })
+          } catch (caregiverErr) {
+            console.error('Error creating caregiver:', caregiverErr)
+            // Continue with other caregivers even if one fails
+          }
         }
       }
 
       // Clear setup data
       localStorage.removeItem('familySetup')
       navigate('/dashboard')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error completing setup:', error)
-      alert('Failed to complete setup. Please try again.')
+      const errorMessage = error?.message || 'Failed to complete setup. Please try again.'
+      setError(errorMessage)
+      // Also show alert for immediate feedback
+      alert(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -180,6 +169,14 @@ export function SetupReviewPage() {
             Review your family setup and complete the process.
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 rounded-lg bg-red-light text-red-DEFAULT border border-red-DEFAULT/20">
+            <p className="font-semibold mb-1">Error</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
 
         {/* Review Cards */}
         <div className="space-y-4 mb-8">
