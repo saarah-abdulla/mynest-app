@@ -38,8 +38,17 @@ export function SetupProfilePage() {
         const user = users.find((u) => u.email === currentUser.email)
         
         if (user && currentUser.email) {
+          // If user already has a displayName set, they've completed profile setup
+          // But we still allow them to edit it here
           setDisplayName(user.displayName || currentUser.email.split('@')[0])
           setPhone(user.phone || '')
+          
+          // If user already has a family, they shouldn't be on this page
+          // Redirect them to dashboard or family setup
+          if (user.familyId) {
+            navigate('/dashboard')
+            return
+          }
         }
       } catch (err) {
         console.log('Could not load user data:', err)
@@ -49,7 +58,7 @@ export function SetupProfilePage() {
     }
 
     loadUserData()
-  }, [currentUser])
+  }, [currentUser, location.state, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

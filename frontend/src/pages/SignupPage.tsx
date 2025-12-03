@@ -54,10 +54,14 @@ export function SignupPage() {
 
     try {
       setLoading(true)
-      await signup(email, password, true) // Send verification email
+      const { user } = await signup(email, password, true) // Send verification email
       
-      // Wait a moment for Firebase to initialize
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      if (!user) {
+        throw new Error('Failed to create user account')
+      }
+      
+      // Wait a moment for Firebase to initialize and ensure user is set
+      await new Promise(resolve => setTimeout(resolve, 1500))
       
       // Check for pending invitation by email (even if no token in URL)
       let invitationToAccept = invitationToken
@@ -76,7 +80,7 @@ export function SignupPage() {
         try {
           await api.acceptInvitation(invitationToAccept)
           // Redirect to dashboard for caregivers (they're now linked to a family)
-          navigate('/dashboard')
+          navigate('/dashboard', { replace: true })
           return
         } catch (inviteErr) {
           console.error('Error accepting invitation:', inviteErr)
@@ -90,7 +94,7 @@ export function SignupPage() {
           } catch (userErr) {
             console.log('User record creation failed:', userErr)
           }
-          navigate(`/invite/${invitationToAccept}`)
+          navigate(`/invite/${invitationToAccept}`, { replace: true })
           return
         }
       }
@@ -100,8 +104,9 @@ export function SignupPage() {
       
       // Show success message about email verification
       setError('')
-      // Navigate to profile setup first
+      // Navigate to profile setup first - use replace to prevent back navigation
       navigate('/setup/profile', { 
+        replace: true,
         state: { 
           emailVerificationSent: true,
           email: email 
