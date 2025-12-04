@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
 import { asyncHandler } from '../middleware/asyncHandler'
+import { requireFamilyAccess } from '../middleware/requireFamilyAccess'
 import { prisma } from '../lib/prisma'
 
 const router = Router()
@@ -81,9 +82,15 @@ router.get(
 
 router.get(
   '/:id',
+  requireFamilyAccess,
   asyncHandler(async (req: Request, res: Response) => {
+    const familyId = (req as Request & { familyId?: string }).familyId
+    
     const child = await prisma.child.findUnique({
-      where: { id: req.params.id },
+      where: { 
+        id: req.params.id,
+        familyId: familyId!, // Ensure child belongs to user's family
+      },
       include: {
         family: true,
         caregivers: {
@@ -136,8 +143,10 @@ router.post(
 
 router.put(
   '/:id',
+  requireFamilyAccess,
   asyncHandler(async (req: Request, res: Response) => {
     const authUser = (req as Request & { user?: { uid: string } }).user
+    const familyId = (req as Request & { familyId?: string }).familyId
     
     if (!authUser?.uid) {
       return res.status(401).json({ error: 'Unauthorized' })
@@ -146,7 +155,7 @@ router.put(
     // Check user role - only parents can edit children
     const user = await prisma.user.findUnique({
       where: { firebaseUid: authUser.uid },
-      select: { role: true, familyId: true },
+      select: { role: true },
     })
 
     if (!user) {
@@ -159,16 +168,15 @@ router.put(
 
     // Verify child belongs to user's family
     const child = await prisma.child.findUnique({
-      where: { id: req.params.id },
+      where: { 
+        id: req.params.id,
+        familyId: familyId!, // Ensure child belongs to user's family
+      },
       select: { familyId: true },
     })
 
     if (!child) {
       return res.status(404).json({ error: 'Child not found' })
-    }
-
-    if (child.familyId !== user.familyId) {
-      return res.status(403).json({ error: 'You can only edit children from your own family' })
     }
 
     const data = childSchema.partial().parse(req.body)
@@ -196,8 +204,10 @@ router.put(
 
 router.delete(
   '/:id',
+  requireFamilyAccess,
   asyncHandler(async (req: Request, res: Response) => {
     const authUser = (req as Request & { user?: { uid: string } }).user
+    const familyId = (req as Request & { familyId?: string }).familyId
     
     if (!authUser?.uid) {
       return res.status(401).json({ error: 'Unauthorized' })
@@ -206,7 +216,7 @@ router.delete(
     // Check user role - only parents can delete children
     const user = await prisma.user.findUnique({
       where: { firebaseUid: authUser.uid },
-      select: { role: true, familyId: true },
+      select: { role: true },
     })
 
     if (!user) {
@@ -217,22 +227,17 @@ router.delete(
       return res.status(403).json({ error: 'Only parents can delete children' })
     }
 
-    if (!user.familyId) {
-      return res.status(403).json({ error: 'User does not belong to a family' })
-    }
-
     // Verify child belongs to user's family
     const child = await prisma.child.findUnique({
-      where: { id: req.params.id },
+      where: { 
+        id: req.params.id,
+        familyId: familyId!, // Ensure child belongs to user's family
+      },
       select: { familyId: true },
     })
 
     if (!child) {
       return res.status(404).json({ error: 'Child not found' })
-    }
-
-    if (child.familyId !== user.familyId) {
-      return res.status(403).json({ error: 'You can only delete children from your own family' })
     }
 
     try {

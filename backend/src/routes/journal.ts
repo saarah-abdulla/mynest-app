@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
 import { asyncHandler } from '../middleware/asyncHandler'
+import { requireFamilyAccess } from '../middleware/requireFamilyAccess'
 import { prisma } from '../lib/prisma'
 
 const router = Router()
@@ -79,12 +80,25 @@ router.get(
 
 router.get(
   '/:id',
+  requireFamilyAccess,
   asyncHandler(async (req: Request, res: Response) => {
+    const familyId = (req as Request & { familyId?: string }).familyId
+    
+    // Get the entry and verify it belongs to a child in the user's family
     const entry = await prisma.journalEntry.findUnique({
       where: { id: req.params.id },
       include: { child: true, author: true },
     })
-    if (!entry) return res.status(404).json({ error: 'Journal entry not found' })
+    
+    if (!entry) {
+      return res.status(404).json({ error: 'Journal entry not found' })
+    }
+    
+    // Verify the entry's child belongs to the user's family
+    if (entry.child.familyId !== familyId) {
+      return res.status(403).json({ error: 'Forbidden: Journal entry does not belong to your family' })
+    }
+    
     res.json(entry)
   }),
 )
@@ -150,8 +164,10 @@ router.post(
 
 router.put(
   '/:id',
+  requireFamilyAccess,
   asyncHandler(async (req: Request, res: Response) => {
     const authUser = (req as Request & { user?: { uid: string } }).user
+    const familyId = (req as Request & { familyId?: string }).familyId
     
     if (!authUser?.uid) {
       return res.status(401).json({ error: 'Unauthorized' })
@@ -160,7 +176,7 @@ router.put(
     // Get user info
     const user = await prisma.user.findUnique({
       where: { firebaseUid: authUser.uid },
-      select: { id: true, role: true, familyId: true },
+      select: { id: true, role: true },
     })
 
     if (!user) {
@@ -178,7 +194,7 @@ router.put(
     }
 
     // Verify entry belongs to user's family
-    if (entry.child.familyId !== user.familyId) {
+    if (entry.child.familyId !== familyId) {
       return res.status(403).json({ error: 'You can only edit journal entries from your own family' })
     }
 
@@ -259,8 +275,10 @@ router.put(
 
 router.delete(
   '/:id',
+  requireFamilyAccess,
   asyncHandler(async (req: Request, res: Response) => {
     const authUser = (req as Request & { user?: { uid: string } }).user
+    const familyId = (req as Request & { familyId?: string }).familyId
     
     if (!authUser?.uid) {
       return res.status(401).json({ error: 'Unauthorized' })
@@ -269,7 +287,7 @@ router.delete(
     // Check user role - only parents can delete journal entries
     const user = await prisma.user.findUnique({
       where: { firebaseUid: authUser.uid },
-      select: { role: true, familyId: true },
+      select: { role: true },
     })
 
     if (!user) {
@@ -290,7 +308,7 @@ router.delete(
       return res.status(404).json({ error: 'Journal entry not found' })
     }
 
-    if (entry.child.familyId !== user.familyId) {
+    if (entry.child.familyId !== familyId) {
       return res.status(403).json({ error: 'You can only delete journal entries from your own family' })
     }
 
