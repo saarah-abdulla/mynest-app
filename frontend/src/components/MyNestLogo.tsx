@@ -39,7 +39,7 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
         maxWidth: '100%',
         height: 'auto'
       }}
-      onError={(e) => {
+      onError={() => {
         console.error('Logo image failed to load from:', imageSrc)
         console.error('Check if mynest-logo.png exists in frontend/public folder and is deployed to Vercel')
         setImageError(true)
