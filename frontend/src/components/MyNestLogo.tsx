@@ -1,12 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) {
   const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
-  // Try multiple paths in case of deployment issues
+  // Use absolute URL to ensure it works in all environments
   const imageSrc = '/mynest-logo.png'
 
-  if (imageError) {
+  useEffect(() => {
+    // Preload the image to check if it exists
+    const img = new Image()
+    img.onload = () => {
+      setImageLoaded(true)
+      setImageError(false)
+    }
+    img.onerror = () => {
+      console.error('Logo image failed to preload from:', imageSrc)
+      setImageError(true)
+      setImageLoaded(false)
+    }
+    img.src = imageSrc
+  }, [imageSrc])
+
+  if (imageError || !imageLoaded) {
     // Fallback: Show a simple nest icon instead of text
     return (
       <div className={`${className} rounded-lg bg-sage flex items-center justify-center flex-shrink-0`}>
@@ -37,15 +53,18 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
         objectFit: 'contain',
         display: 'block',
         maxWidth: '100%',
-        height: 'auto'
+        height: 'auto',
+        visibility: imageLoaded ? 'visible' : 'hidden'
       }}
       onError={() => {
         console.error('Logo image failed to load from:', imageSrc)
         console.error('Check if mynest-logo.png exists in frontend/public folder and is deployed to Vercel')
         setImageError(true)
+        setImageLoaded(false)
       }}
       onLoad={() => {
-        // Image loaded successfully
+        console.log('Logo image loaded successfully from:', imageSrc)
+        setImageLoaded(true)
         setImageError(false)
       }}
     />
