@@ -10,13 +10,29 @@ config({ path: resolve(__dirname, '../../.env.test') })
 
 // Use test database URL from environment
 // Priority: TEST_DATABASE_URL > DATABASE_URL
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL
+let TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL
 
-if (!TEST_DATABASE_URL) {
+// Validate database URL format
+if (!TEST_DATABASE_URL || TEST_DATABASE_URL.trim() === '') {
   throw new Error(
-    'TEST_DATABASE_URL or DATABASE_URL must be set for testing.\n' +
-    'Please create a .env.test file with TEST_DATABASE_URL pointing to a test database.\n' +
-    'You can copy .env.test.example to .env.test and fill in your test database URL.'
+    '❌ TEST_DATABASE_URL or DATABASE_URL must be set for testing.\n\n' +
+    'To fix this:\n' +
+    '1. Create a .env.test file in the backend directory\n' +
+    '2. Copy .env.test.example to .env.test\n' +
+    '3. Set TEST_DATABASE_URL to your test database URL:\n' +
+    '   TEST_DATABASE_URL="postgresql://user:password@localhost:5432/mynest_test?schema=public"\n\n' +
+    'Example:\n' +
+    '   cp .env.test.example .env.test\n' +
+    '   # Then edit .env.test and add your TEST_DATABASE_URL'
+  )
+}
+
+// Validate URL format
+if (!TEST_DATABASE_URL.startsWith('postgresql://') && !TEST_DATABASE_URL.startsWith('postgres://')) {
+  throw new Error(
+    `❌ Invalid TEST_DATABASE_URL format: "${TEST_DATABASE_URL}"\n\n` +
+    'The URL must start with "postgresql://" or "postgres://"\n' +
+    'Example: postgresql://user:password@localhost:5432/mynest_test?schema=public'
   )
 }
 
