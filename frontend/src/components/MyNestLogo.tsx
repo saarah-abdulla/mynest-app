@@ -5,24 +5,50 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
   const [imageLoaded, setImageLoaded] = useState(false)
 
   // Use absolute URL to ensure it works in all environments
+  // Try multiple possible paths for the logo
   const imageSrc = '/mynest-logo.png'
+  
+  // Also try with base URL for production
+  const getImageSrc = () => {
+    // In production, try the absolute path first
+    if (typeof window !== 'undefined' && window.location.origin) {
+      return `${window.location.origin}/mynest-logo.png`
+    }
+    return imageSrc
+  }
 
   useEffect(() => {
     // Preload the image to check if it exists
     const img = new Image()
+    const src = getImageSrc()
+    
     img.onload = () => {
+      console.log('Logo image preloaded successfully from:', src)
       setImageLoaded(true)
       setImageError(false)
     }
     img.onerror = () => {
-      console.error('Logo image failed to preload from:', imageSrc)
-      setImageError(true)
-      setImageLoaded(false)
+      console.error('Logo image failed to preload from:', src)
+      console.error('Trying fallback path:', imageSrc)
+      // Try the relative path as fallback
+      const fallbackImg = new Image()
+      fallbackImg.onload = () => {
+        console.log('Logo loaded from fallback path:', imageSrc)
+        setImageLoaded(true)
+        setImageError(false)
+      }
+      fallbackImg.onerror = () => {
+        console.error('Logo failed from both paths, showing fallback icon')
+        setImageError(true)
+        setImageLoaded(false)
+      }
+      fallbackImg.src = imageSrc
     }
-    img.src = imageSrc
-  }, [imageSrc])
+    img.src = src
+  }, [])
 
-  if (imageError || !imageLoaded) {
+  // Don't show fallback until we've confirmed the image failed
+  if (imageError) {
     // Fallback: Show a simple nest icon instead of text
     return (
       <div className={`${className} rounded-lg bg-sage flex items-center justify-center flex-shrink-0`}>
@@ -44,9 +70,10 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
     )
   }
 
+  // Show image once loaded, or show nothing while loading (to prevent flash)
   return (
     <img
-      src={imageSrc}
+      src={getImageSrc()}
       alt="MyNest Logo"
       className={className}
       style={{ 
@@ -54,16 +81,24 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
         display: 'block',
         maxWidth: '100%',
         height: 'auto',
-        visibility: imageLoaded ? 'visible' : 'hidden'
+        opacity: imageLoaded ? 1 : 0,
+        transition: 'opacity 0.2s ease-in-out'
       }}
-      onError={() => {
-        console.error('Logo image failed to load from:', imageSrc)
-        console.error('Check if mynest-logo.png exists in frontend/public folder and is deployed to Vercel')
-        setImageError(true)
-        setImageLoaded(false)
+      onError={(e) => {
+        console.error('Logo image failed to load from:', getImageSrc())
+        // Try fallback path
+        const target = e.target as HTMLImageElement
+        if (target.src !== imageSrc) {
+          console.log('Trying fallback path:', imageSrc)
+          target.src = imageSrc
+        } else {
+          console.error('Both image paths failed, showing fallback icon')
+          setImageError(true)
+          setImageLoaded(false)
+        }
       }}
       onLoad={() => {
-        console.log('Logo image loaded successfully from:', imageSrc)
+        console.log('Logo image loaded successfully')
         setImageLoaded(true)
         setImageError(false)
       }}
