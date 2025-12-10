@@ -75,19 +75,22 @@ export function DashboardPage() {
     fetchUserData()
   }, [currentUser])
 
-  // Test backend connection on mount (only in development)
-  // Disabled in production to avoid unnecessary requests and errors
+  // Test backend connection on mount (ONLY in development)
+  // COMPLETELY DISABLED in production to avoid CORS errors and unnecessary requests
   useEffect(() => {
-    // Only test connection in development mode
-    // In production, we rely on actual API calls to detect connection issues
-    if (import.meta.env.DEV) {
+    // Double-check we're in development - use both DEV flag and MODE
+    const isDev = import.meta.env.DEV === true || import.meta.env.MODE === 'development'
+    const isProd = import.meta.env.PROD === true || import.meta.env.MODE === 'production'
+    
+    // Only run health check in development, never in production
+    if (isDev && !isProd) {
       testBackendConnection().then((isConnected) => {
         if (!isConnected) {
           console.warn('Backend connection test failed. This is normal if the backend is not running locally.')
         }
       })
     }
-    // In production, skip the health check entirely
+    // In production builds, this entire block is tree-shaken out or never executes
   }, [])
 
   // Refetch children data when window gains focus (e.g., when returning from FamilyPage)
