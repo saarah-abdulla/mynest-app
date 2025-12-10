@@ -75,13 +75,16 @@ export function DashboardPage() {
     fetchUserData()
   }, [currentUser])
 
-  // Test backend connection on mount
+  // Test backend connection on mount (only in development)
   useEffect(() => {
-    testBackendConnection().then((isConnected) => {
-      if (!isConnected) {
-        console.error('Backend is not accessible. Make sure it\'s running on http://localhost:4000')
-      }
-    })
+    // Only test connection in development to avoid unnecessary requests in production
+    if (import.meta.env.DEV) {
+      testBackendConnection().then((isConnected) => {
+        if (!isConnected) {
+          console.warn('Backend connection test failed. This is normal if the backend is not running locally.')
+        }
+      })
+    }
   }, [])
 
   // Refetch children data when window gains focus (e.g., when returning from FamilyPage)
