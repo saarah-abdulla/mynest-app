@@ -76,8 +76,10 @@ export function DashboardPage() {
   }, [currentUser])
 
   // Test backend connection on mount (only in development)
+  // Disabled in production to avoid unnecessary requests and errors
   useEffect(() => {
-    // Only test connection in development to avoid unnecessary requests in production
+    // Only test connection in development mode
+    // In production, we rely on actual API calls to detect connection issues
     if (import.meta.env.DEV) {
       testBackendConnection().then((isConnected) => {
         if (!isConnected) {
@@ -85,6 +87,7 @@ export function DashboardPage() {
         }
       })
     }
+    // In production, skip the health check entirely
   }, [])
 
   // Refetch children data when window gains focus (e.g., when returning from FamilyPage)
