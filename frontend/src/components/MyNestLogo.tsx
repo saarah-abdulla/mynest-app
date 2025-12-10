@@ -18,34 +18,35 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
   }
 
   useEffect(() => {
-    // Preload the image to check if it exists
+    // Start with relative path first (works better with Vite/Vercel)
     const img = new Image()
-    const src = getImageSrc()
     
     img.onload = () => {
-      console.log('Logo image preloaded successfully from:', src)
+      console.log('✅ Logo image loaded successfully from:', img.src)
       setImageLoaded(true)
       setImageError(false)
     }
+    
     img.onerror = () => {
-      console.error('Logo image failed to preload from:', src)
-      console.error('Trying fallback path:', imageSrc)
-      // Try the relative path as fallback
-      const fallbackImg = new Image()
-      fallbackImg.onload = () => {
-        console.log('Logo loaded from fallback path:', imageSrc)
-        setImageLoaded(true)
-        setImageError(false)
-      }
-      fallbackImg.onerror = () => {
-        console.error('Logo failed from both paths, showing fallback icon')
+      console.error('❌ Logo image failed to load from:', img.src)
+      // Try absolute URL as fallback
+      const absoluteSrc = typeof window !== 'undefined' 
+        ? `${window.location.origin}/mynest-logo.png`
+        : imageSrc
+      
+      if (img.src !== absoluteSrc) {
+        console.log('🔄 Trying absolute URL:', absoluteSrc)
+        img.src = absoluteSrc
+      } else {
+        console.error('❌ Both paths failed, showing fallback icon')
         setImageError(true)
         setImageLoaded(false)
       }
-      fallbackImg.src = imageSrc
     }
-    img.src = src
-  }, [])
+    
+    // Start with relative path
+    img.src = imageSrc
+  }, [imageSrc])
 
   // Don't show fallback until we've confirmed the image failed
   if (imageError) {
@@ -74,7 +75,7 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
   // Show image once loaded, or show nothing while loading (to prevent flash)
   return (
     <img
-      src={getImageSrc()}
+      src={imageSrc}
       alt="MyNest Logo"
       className={className}
       style={{ 
@@ -83,23 +84,25 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
         maxWidth: '100%',
         height: 'auto',
         opacity: imageLoaded ? 1 : 0,
-        transition: 'opacity 0.2s ease-in-out'
+        transition: 'opacity 0.3s ease-in-out'
       }}
       onError={(e) => {
-        console.error('Logo image failed to load from:', getImageSrc())
-        // Try fallback path
         const target = e.target as HTMLImageElement
-        if (target.src !== imageSrc) {
-          console.log('Trying fallback path:', imageSrc)
-          target.src = imageSrc
+        console.error('❌ Image onError - failed to load from:', target.src)
+        
+        // Try absolute URL if we're using relative
+        if (target.src.endsWith('/mynest-logo.png') && typeof window !== 'undefined') {
+          const absoluteSrc = `${window.location.origin}/mynest-logo.png`
+          console.log('🔄 Retrying with absolute URL:', absoluteSrc)
+          target.src = absoluteSrc
         } else {
-          console.error('Both image paths failed, showing fallback icon')
+          console.error('❌ All image load attempts failed')
           setImageError(true)
           setImageLoaded(false)
         }
       }}
       onLoad={() => {
-        console.log('Logo image loaded successfully')
+        console.log('✅ Image onLoad - logo loaded successfully')
         setImageLoaded(true)
         setImageError(false)
       }}
