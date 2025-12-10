@@ -7,7 +7,24 @@ import type {
   User,
 } from '../types/entities'
 
+// Get API base URL from environment variable
+// In production (Vercel), this MUST be set to your Railway backend URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api'
+
+// Log the API URL in development to help debug
+if (import.meta.env.DEV) {
+  console.log('[API] Using API_BASE_URL:', API_BASE_URL)
+}
+
+// Warn if using localhost in production
+if (import.meta.env.PROD && API_BASE_URL.includes('localhost')) {
+  console.error(
+    '❌ ERROR: VITE_API_BASE_URL is not set in Vercel!\n' +
+    'The app is trying to connect to localhost, which will not work.\n' +
+    'Please set VITE_API_BASE_URL in Vercel environment variables to your Railway backend URL.\n' +
+    'Example: https://mynest-app-production.up.railway.app/api'
+  )
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`
