@@ -131,7 +131,27 @@ export function SetupReviewPage() {
       navigate('/dashboard')
     } catch (error: any) {
       console.error('Error completing setup:', error)
-      const errorMessage = error?.message || 'Failed to complete setup. Please try again.'
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        response: error?.response,
+      })
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to complete setup. Please try again.'
+      
+      if (error?.message) {
+        if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+          errorMessage = 'Unable to connect to the backend. Please check your internet connection and try again.'
+        } else if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+          errorMessage = 'Your session has expired. Please sign in again.'
+        } else if (error.message.includes('Forbidden') || error.message.includes('403')) {
+          errorMessage = 'You do not have permission to perform this action.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
       setError(errorMessage)
       // Also show alert for immediate feedback
       alert(errorMessage)
