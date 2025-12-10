@@ -4,18 +4,8 @@ export function MyNestLogo({ className = "w-10 h-10" }: { className?: string }) 
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
 
-  // Use absolute URL to ensure it works in all environments
-  // Try multiple possible paths for the logo
+  // Use relative path (Vite/Vercel standard for static files)
   const imageSrc = '/mynest-logo.png'
-  
-  // Also try with base URL for production
-  const getImageSrc = () => {
-    // In production, try the absolute path first
-    if (typeof window !== 'undefined' && window.location.origin) {
-      return `${window.location.origin}/mynest-logo.png`
-    }
-    return imageSrc
-  }
 
   useEffect(() => {
     // Start with relative path first (works better with Vite/Vercel)
