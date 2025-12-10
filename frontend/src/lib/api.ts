@@ -11,18 +11,26 @@ import type {
 // In production (Vercel), this MUST be set to your Railway backend URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api'
 
-// Log the API URL in development to help debug
-if (import.meta.env.DEV) {
-  console.log('[API] Using API_BASE_URL:', API_BASE_URL)
-}
+// Debug logging - always log in production to help diagnose issues
+console.log('[API] Environment check:', {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  API_BASE_URL: API_BASE_URL,
+  isProduction: import.meta.env.PROD,
+  isDevelopment: import.meta.env.DEV,
+  mode: import.meta.env.MODE,
+})
 
 // Warn if using localhost in production
 if (import.meta.env.PROD && API_BASE_URL.includes('localhost')) {
   console.error(
-    '❌ ERROR: VITE_API_BASE_URL is not set in Vercel!\n' +
+    '❌ CRITICAL ERROR: VITE_API_BASE_URL is not set correctly in Vercel!\n' +
+    'Current value:', import.meta.env.VITE_API_BASE_URL, '\n' +
     'The app is trying to connect to localhost, which will not work.\n' +
-    'Please set VITE_API_BASE_URL in Vercel environment variables to your Railway backend URL.\n' +
-    'Example: https://mynest-app-production.up.railway.app/api'
+    'Please:\n' +
+    '1. Go to Vercel → Settings → Environment Variables\n' +
+    '2. Set VITE_API_BASE_URL = https://your-railway-backend.up.railway.app/api\n' +
+    '3. Make sure it\'s set for "Production" environment\n' +
+    '4. Redeploy WITHOUT build cache'
   )
 }
 
