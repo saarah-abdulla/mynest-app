@@ -155,7 +155,22 @@ router.post(
       return res.status(403).json({ error: 'Only parents can create caregivers' })
     }
 
-    const data = caregiverSchema.parse(req.body)
+    let data
+    try {
+      data = caregiverSchema.parse(req.body)
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error('[caregivers] Validation error:', error.errors)
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: error.errors.map((err) => ({
+            field: err.path.join('.'),
+            message: err.message,
+          })),
+        })
+      }
+      throw error
+    }
 
     try {
       // Create caregiver data object
