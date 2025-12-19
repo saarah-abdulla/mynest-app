@@ -60,8 +60,18 @@ export function UpcomingEventsCard({
     return children.find((c) => c.id === childId)?.fullName || 'Unknown'
   }
 
-  // Sort events by date, showing upcoming ones first
-  const sortedEvents = [...events].sort(
+  // Filter out past events and sort by date, showing upcoming ones first
+  const now = new Date()
+  const upcomingEvents = events.filter((event) => {
+    const eventStartTime = new Date(event.startTime)
+    // Include events that start today or in the future
+    // Compare dates at the start of the day to include all events today
+    const eventDate = new Date(eventStartTime.getFullYear(), eventStartTime.getMonth(), eventStartTime.getDate())
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    return eventDate >= today
+  })
+
+  const sortedEvents = [...upcomingEvents].sort(
     (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
   )
 
@@ -72,7 +82,10 @@ export function UpcomingEventsCard({
         <p className="text-sm text-brown/70">Don&apos;t miss these important appointments</p>
       </div>
       <div className="mb-4 space-y-3">
-        {sortedEvents.slice(0, 3).map((event) => (
+        {sortedEvents.length === 0 ? (
+          <p className="text-sm text-brown/70 text-center py-4">No upcoming events scheduled</p>
+        ) : (
+          sortedEvents.slice(0, 3).map((event) => (
           <div key={event.id} className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <p className="font-semibold text-brown">{event.title}</p>
@@ -87,7 +100,8 @@ export function UpcomingEventsCard({
               {event.category}
             </span>
           </div>
-        ))}
+        ))
+        )}
       </div>
       <button
         onClick={onViewCalendar}
