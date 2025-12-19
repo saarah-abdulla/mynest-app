@@ -18,28 +18,43 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     // Get user's familyId if authenticated
     let familyId: string | undefined
+    let currentUserId: string | undefined
     const authUser = (req as Request & { user?: { uid: string } }).user
     
     if (authUser?.uid) {
       const user = await prisma.user.findUnique({
         where: { firebaseUid: authUser.uid },
-        select: { familyId: true },
+        select: { id: true, familyId: true },
       })
       familyId = user?.familyId || undefined
-      console.log(`[users] User ${authUser.uid} has familyId: ${familyId || 'none'}`)
+      currentUserId = user?.id
+      console.log(`[users] User ${authUser.uid} has familyId: ${familyId || 'none'}, userId: ${currentUserId || 'none'}`)
     } else {
       console.log('[users] No authenticated user found, returning no users')
     }
 
-    // Filter users by familyId
-    const where = familyId ? { familyId } : { id: 'impossible-id' } // Return empty if no familyId
-    console.log(`[users] Filtering with where:`, where)
+    // If user has a familyId, return all users in that family
+    // If user has no familyId, return only the current user (for profile setup)
+    let users
+    if (familyId) {
+      users = await prisma.user.findMany({
+        where: { familyId },
+        include: { family: true, caregiver: true },
+      })
+      console.log(`[users] Found ${users.length} users in family ${familyId}`)
+    } else if (currentUserId) {
+      // User has no family yet, but return themselves so profile setup works
+      users = await prisma.user.findMany({
+        where: { id: currentUserId },
+        include: { family: true, caregiver: true },
+      })
+      console.log(`[users] User has no family, returning only themselves (${users.length} user)`)
+    } else {
+      // No authenticated user or user doesn't exist in DB yet
+      users = []
+      console.log(`[users] No user found in database, returning empty list`)
+    }
     
-    const users = await prisma.user.findMany({
-      where,
-      include: { family: true, caregiver: true },
-    })
-    console.log(`[users] Found ${users.length} users`)
     res.json(users)
   }),
 )
