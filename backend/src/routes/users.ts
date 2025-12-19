@@ -75,38 +75,81 @@ router.post(
       return res.status(401).json({ error: 'Unauthorized - Firebase token required' })
     }
     
-    const data = userSchema.parse(req.body)
-    const firebaseUid = authUser.uid
-    
-    // Check if user already exists
-    const existing = await prisma.user.findUnique({
-      where: { firebaseUid },
-    })
-    
-    if (existing) {
-      // Update existing user (especially familyId if provided)
-      const updated = await prisma.user.update({
+    try {
+      const data = userSchema.parse(req.body)
+      const firebaseUid = authUser.uid
+      
+      // Check if user already exists
+      const existing = await prisma.user.findUnique({
         where: { firebaseUid },
-        data: {
-          email: data.email,
-          displayName: data.displayName,
-          role: data.role,
-          phone: data.phone,
-          // Always update familyId if provided, even if user exists
-          familyId: data.familyId || existing.familyId,
-        },
       })
-      return res.json(updated)
-    }
-    
-    // Create new user with firebaseUid from token
-    const created = await prisma.user.create({ 
-      data: {
-        ...data,
-        firebaseUid,
+      
+      if (existing) {
+        // Update existing user (especially familyId if provided)
+        const updated = await prisma.user.update({
+          where: { firebaseUid },
+          data: {
+            email: data.email,
+            displayName: data.displayName,
+            role: data.role,
+            phone: data.phone,
+            // Always update familyId if provided, even if user exists
+            familyId: data.familyId || existing.familyId,
+          },
+        })
+        return res.json(updated)
       }
-    })
-    res.status(201).json(created)
+      
+      // Create new user with firebaseUid from token
+      const created = await prisma.user.create({ 
+        data: {
+          ...data,
+          firebaseUid,
+        }
+      })
+      res.status(201).json(created)
+    } catch (error: any) {
+      console.error('[users] Error creating/updating user:', error)
+      
+      // Handle Zod validation errors
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          error: 'Invalid user data',
+          details: error.errors 
+        })
+      }
+      
+      // Handle Prisma unique constraint violations
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0] || 'field'
+        return res.status(400).json({ 
+          error: `A user with this ${field} already exists`,
+          field 
+        })
+      }
+      
+      // Handle Prisma foreign key violations
+      if (error.code === 'P2003') {
+        return res.status(400).json({ 
+          error: 'Invalid family ID or reference',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        })
+      }
+      
+      // Handle missing required fields
+      if (error.code === 'P2011') {
+        return res.status(400).json({ 
+          error: 'Missing required field',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        })
+      }
+      
+      // Generic error
+      return res.status(500).json({ 
+        error: 'Failed to create user',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      })
+    }
   }),
 )
 
