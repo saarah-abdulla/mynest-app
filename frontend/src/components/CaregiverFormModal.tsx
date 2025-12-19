@@ -82,8 +82,18 @@ export function CaregiverFormModal({
 
       onSuccess()
       onClose()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save caregiver')
+    } catch (err: any) {
+      // Extract detailed error message
+      let errorMessage = 'Failed to save caregiver'
+      if (err.message) {
+        errorMessage = err.message
+      }
+      // If there are validation details, show them
+      if (err.details && Array.isArray(err.details)) {
+        const validationErrors = err.details.map((d: any) => `${d.field}: ${d.message}`).join(', ')
+        errorMessage = `Validation failed: ${validationErrors}`
+      }
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
