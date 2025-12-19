@@ -103,8 +103,13 @@ app.get('/', (_req, res) => {
   })
 })
 
+// Health check endpoint - must be before auth middleware for Railway health checks
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  })
 })
 
 const shouldEnforceAuth = process.env.SKIP_AUTH !== 'true'
