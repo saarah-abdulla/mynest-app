@@ -63,15 +63,35 @@ export function CaregiverFormModal({
     setError(null)
 
     try {
+      // Validate required fields before sending
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('First name and last name are required')
+        setLoading(false)
+        return
+      }
+
       const fullName = `${firstName} ${lastName}`.trim()
+      
+      if (fullName.length < 2) {
+        setError('Full name must be at least 2 characters')
+        setLoading(false)
+        return
+      }
+
+      if (!familyId || familyId.trim() === '') {
+        setError('Family ID is required. Please complete family setup first.')
+        setLoading(false)
+        return
+      }
+
       const notes = `Relationship: ${relationship}${email ? ` | Email: ${email}` : ''}`
 
       const data = {
         fullName,
-        email: email || undefined,
-        phone: phone || undefined,
-        notes: notes || undefined,
-        familyId,
+        email: email && email.trim() ? email.trim() : undefined,
+        phone: phone && phone.trim() ? phone.trim() : undefined,
+        notes: notes.trim() || undefined,
+        familyId: familyId.trim(),
       }
 
       if (caregiver) {

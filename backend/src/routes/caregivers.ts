@@ -9,11 +9,11 @@ import crypto from 'crypto'
 const router = Router()
 
 const caregiverSchema = z.object({
-  fullName: z.string().min(2),
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   phone: z.string().optional(),
   notes: z.string().optional(),
-  email: z.string().email().optional(),
-  familyId: z.string().min(1),
+  email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  familyId: z.string().min(1, 'Family ID is required'),
   userId: z.string().optional(),
 })
 
