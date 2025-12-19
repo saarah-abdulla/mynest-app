@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { asyncHandler } from '../middleware/asyncHandler'
+import type { User, Family, Caregiver } from '@prisma/client'
 
 const router = Router()
 
@@ -35,7 +36,12 @@ router.get(
 
     // If user has a familyId, return all users in that family
     // If user has no familyId, return only the current user (for profile setup)
-    let users
+    type UserWithRelations = User & {
+      family: Family | null
+      caregiver: Caregiver | null
+    }
+    let users: UserWithRelations[]
+    
     if (familyId) {
       users = await prisma.user.findMany({
         where: { familyId },
