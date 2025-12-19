@@ -50,7 +50,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({}))
-      throw new Error(error.error ?? `Request failed with status ${res.status}`)
+      // Create error object with details for better error handling
+      const errorObj = new Error(error.error ?? `Request failed with status ${res.status}`) as any
+      if (error.details) {
+        errorObj.details = error.details
+      }
+      throw errorObj
     }
 
     // Handle 204 No Content responses (for DELETE requests)
