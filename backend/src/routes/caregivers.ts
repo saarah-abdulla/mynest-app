@@ -158,14 +158,14 @@ router.post(
     let data
     try {
       data = caregiverSchema.parse(req.body)
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
-        console.error('[caregivers] Validation error:', error.errors)
+        console.error('[caregivers] Validation error:', error.issues)
         return res.status(400).json({
           error: 'Validation failed',
-          details: error.errors.map((err) => ({
-            field: err.path.join('.'),
-            message: err.message,
+          details: error.issues.map((issue) => ({
+            field: issue.path.join('.'),
+            message: issue.message,
           })),
         })
       }
