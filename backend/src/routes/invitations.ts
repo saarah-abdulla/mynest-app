@@ -112,7 +112,52 @@ router.post(
   }),
 )
 
-// Get invitation by token (must come before /email/:email to avoid conflicts)
+// Get invitation by email (for auto-acceptance after signup)
+// IMPORTANT: This route must come BEFORE /:token to avoid route conflicts
+// Express matches routes in order, so more specific routes must come first
+router.get(
+  '/email/:email',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.params
+    const authUser = (req as Request & { user?: { uid: string } }).user
+
+    if (!authUser?.uid) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    // Decode the email parameter
+    const decodedEmail = decodeURIComponent(email).toLowerCase()
+
+    // Find pending invitation for this email
+    const invitation = await prisma.invitation.findFirst({
+      where: {
+        email: decodedEmail,
+        status: 'pending',
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        caregiver: true,
+        family: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (!invitation) {
+      return res.status(404).json({ error: 'No pending invitation found for this email' })
+    }
+
+    res.json({
+      id: invitation.id,
+      token: invitation.token,
+      email: invitation.email,
+      caregiverName: invitation.caregiver.fullName,
+      familyName: invitation.family.name,
+      expiresAt: invitation.expiresAt.toISOString(),
+    })
+  }),
+)
+
+// Get invitation by token
 router.get(
   '/:token',
   asyncHandler(async (req: Request, res: Response) => {
