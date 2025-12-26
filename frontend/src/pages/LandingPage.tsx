@@ -13,11 +13,15 @@ export function LandingPage() {
       return
     }
 
-    // Check if we're on a Vercel domain
-    const isVercelDomain = window.location.hostname.endsWith('.vercel.app')
+    // Check if we're on a Vercel domain, localhost, or Capacitor
+    const hostname = window.location.hostname
+    const isVercelDomain = hostname.endsWith('.vercel.app')
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
+    const isCapacitor = typeof (window as any).Capacitor !== 'undefined'
+    const isCapacitorScheme = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:'
     
-    if (isVercelDomain) {
-      // On Vercel, redirect to login page instead of external landing page
+    // Redirect to login for Vercel, localhost, or Capacitor (not external redirect)
+    if (isVercelDomain || isLocalhost || isCapacitor || isCapacitorScheme) {
       navigate('/login', { replace: true })
     } else {
       // On production domain, redirect to external landing page
@@ -25,14 +29,19 @@ export function LandingPage() {
     }
   }, [currentUser, navigate])
 
-  // Check if we're on a Vercel domain
-  const isVercelDomain = window.location.hostname.endsWith('.vercel.app')
+  // Check if we should redirect to login (not external landing page)
+  const hostname = window.location.hostname
+  const isVercelDomain = hostname.endsWith('.vercel.app')
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1'
+  const isCapacitor = typeof (window as any).Capacitor !== 'undefined'
+  const isCapacitorScheme = window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:'
+  const shouldRedirectToLogin = isVercelDomain || isLocalhost || isCapacitor || isCapacitorScheme
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-brown mb-4">Welcome to MyNest</h1>
-        {isVercelDomain ? (
+        {shouldRedirectToLogin ? (
           <p className="text-brown/70 mb-6">Redirecting to login...</p>
         ) : (
           <>
