@@ -26,10 +26,14 @@ export function RecentActivitiesCard() {
   }, [])
 
   // Refetch entries when window gains focus (e.g., after logging an activity)
+  // Also refetch on mount to ensure we have the latest data when navigating to dashboard
   useEffect(() => {
     const handleFocus = () => {
       refetch()
     }
+    
+    // Refetch immediately on mount
+    refetch()
     
     window.addEventListener('focus', handleFocus)
     return () => {
@@ -37,8 +41,14 @@ export function RecentActivitiesCard() {
     }
   }, [refetch])
 
-  // Get the most recent 3 entries
-  const recentEntries = entries.slice(0, 3)
+  // Get the most recent 3 entries, sorted by updatedAt (or createdAt if updatedAt not available)
+  const recentEntries = [...entries]
+    .sort((a, b) => {
+      const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : new Date(a.createdAt).getTime()
+      const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : new Date(b.createdAt).getTime()
+      return bTime - aTime // Most recent first
+    })
+    .slice(0, 3)
 
   // Helper to get activity summary from note
   const getActivitySummary = (note: string) => {
@@ -50,8 +60,9 @@ export function RecentActivitiesCard() {
     return firstLine
   }
 
-  // Helper to format time
-  const formatTime = (dateString: string) => {
+  // Helper to format time - use updatedAt if available, otherwise createdAt
+  const formatTime = (entry: { createdAt: string; updatedAt?: string }) => {
+    const dateString = entry.updatedAt || entry.createdAt
     const date = new Date(dateString)
     const now = new Date()
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
@@ -138,7 +149,7 @@ export function RecentActivitiesCard() {
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-brown/60">
-                        {formatTime(entry.createdAt)}
+                        {formatTime(entry)}
                       </span>
                       {author && (
                         <>

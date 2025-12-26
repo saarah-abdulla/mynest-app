@@ -56,12 +56,12 @@ router.get(
     const entries = await prisma.journalEntry.findMany({
       where,
       include: { child: true, author: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { updatedAt: 'desc' }, // Sort by updatedAt so recently updated entries appear first
     })
     console.log(`[journal] Found ${entries.length} entries`)
     
     // Transform to match frontend type
-    const transformed = entries.map((entry: { id: string; childId: string; authorId: string; note: string; mood: string | null; moodDetails: string | null; meals: any; naps: any; activities: any; medication: any; createdAt: Date }) => ({
+    const transformed = entries.map((entry: { id: string; childId: string; authorId: string; note: string; mood: string | null; moodDetails: string | null; meals: any; naps: any; activities: any; medication: any; createdAt: Date; updatedAt: Date }) => ({
       id: entry.id,
       childId: entry.childId,
       authorId: entry.authorId,
@@ -73,6 +73,7 @@ router.get(
       activities: entry.activities || undefined,
       medication: entry.medication || undefined,
       createdAt: entry.createdAt.toISOString(),
+      updatedAt: entry.updatedAt.toISOString(),
     }))
     res.json(transformed)
   }),
@@ -147,6 +148,7 @@ router.post(
         activities: created.activities || undefined,
         medication: created.medication || undefined,
         createdAt: created.createdAt.toISOString(),
+        updatedAt: created.updatedAt.toISOString(),
       }
       res.status(201).json(transformed)
     } catch (error: any) {
@@ -258,8 +260,24 @@ router.put(
         const updated = await prisma.journalEntry.update({
           where: { id: req.params.id },
           data,
+          include: { child: true, author: true },
         })
-        return res.json(updated)
+        // Transform to match frontend type
+        const transformed = {
+          id: updated.id,
+          childId: updated.childId,
+          authorId: updated.authorId,
+          note: updated.note,
+          mood: updated.mood || undefined,
+          moodDetails: updated.moodDetails || undefined,
+          meals: updated.meals || undefined,
+          naps: updated.naps || undefined,
+          activities: updated.activities || undefined,
+          medication: updated.medication || undefined,
+          createdAt: updated.createdAt.toISOString(),
+          updatedAt: updated.updatedAt.toISOString(),
+        }
+        return res.json(transformed)
       }
     }
 
@@ -268,8 +286,24 @@ router.put(
     const updated = await prisma.journalEntry.update({
       where: { id: req.params.id },
       data: requestData,
+      include: { child: true, author: true },
     })
-    res.json(updated)
+    // Transform to match frontend type
+    const transformed = {
+      id: updated.id,
+      childId: updated.childId,
+      authorId: updated.authorId,
+      note: updated.note,
+      mood: updated.mood || undefined,
+      moodDetails: updated.moodDetails || undefined,
+      meals: updated.meals || undefined,
+      naps: updated.naps || undefined,
+      activities: updated.activities || undefined,
+      medication: updated.medication || undefined,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    }
+    res.json(transformed)
   }),
 )
 

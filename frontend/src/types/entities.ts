@@ -90,5 +90,6 @@ export interface JournalEntry {
     givenTime?: string
   }>
   createdAt: string
+  updatedAt?: string
 }
 

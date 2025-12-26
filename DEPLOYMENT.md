@@ -27,13 +27,16 @@
    - Railway will auto-detect the config from `railway.json`
 5. **Add Environment Variables** (in backend service → Variables):
    ```
-   DATABASE_URL=<from_postgres_service>
-   FIREBASE_PROJECT_ID=mynest-ae
-   FIREBASE_CLIENT_EMAIL=<from_firebase>
-   FIREBASE_PRIVATE_KEY=<from_firebase_with_\n>
-   PORT=4000
+   DATABASE_URL=<from_postgres_service> ✅ Already added
+   FIREBASE_PROJECT_ID=mynest-ae ⚠️ Add this
+   FIREBASE_CLIENT_EMAIL=<from_firebase> ⚠️ Add this
+   FIREBASE_PRIVATE_KEY=<from_firebase_with_\n> ⚠️ Add this
+   PORT=4000 (optional, Railway sets automatically)
    NODE_ENV=production
+   ALLOW_ORIGINS=<add_after_frontend_deployed>
    ```
+   
+   See `RAILWAY_FIREBASE_SETUP.md` for detailed Firebase setup instructions.
 6. **Get Backend URL**: Settings → Generate Domain
 
 ### 2. Frontend → Vercel (3 minutes)
@@ -45,17 +48,25 @@
    - Framework Preset: Vite
    - Build Command: `npm run build`
    - Output Directory: `dist`
-4. **Add Environment Variables**:
+4. **Add Environment Variables** (⚠️ **REQUIRED**):
+   
+   Go to Vercel Dashboard → Your Project → **Settings** → **Environment Variables**
+   
+   Add these 7 variables:
    ```
    VITE_API_BASE_URL=https://your-backend.railway.app/api
-   VITE_FIREBASE_API_KEY=...
-   VITE_FIREBASE_AUTH_DOMAIN=...
-   VITE_FIREBASE_PROJECT_ID=...
-   VITE_FIREBASE_STORAGE_BUCKET=...
-   VITE_FIREBASE_MESSAGING_SENDER_ID=...
-   VITE_FIREBASE_APP_ID=...
+   VITE_FIREBASE_API_KEY=... (from Firebase Console)
+   VITE_FIREBASE_AUTH_DOMAIN=... (from Firebase Console)
+   VITE_FIREBASE_PROJECT_ID=... (from Firebase Console)
+   VITE_FIREBASE_STORAGE_BUCKET=... (from Firebase Console)
+   VITE_FIREBASE_MESSAGING_SENDER_ID=... (from Firebase Console)
+   VITE_FIREBASE_APP_ID=... (from Firebase Console)
    ```
-5. **Deploy** → Get your Vercel URL
+   
+   See `VERCEL_ENV_VARS.md` for detailed instructions.
+   
+5. **Redeploy** after adding variables (Vercel → Deployments → Redeploy)
+6. **Get your Vercel URL** from the deployment
 
 ### 3. Update Backend CORS
 
@@ -69,7 +80,16 @@ ALLOW_ORIGINS=https://your-frontend.vercel.app
 Firebase Console → Authentication → Settings → Authorized domains:
 - Add: `your-frontend.vercel.app`
 
-### 5. Done! 🎉
+### 5. Test Your Deployment
+
+1. **Test Backend**: `curl https://your-backend.railway.app/health`
+2. **Test Frontend**: Visit your Vercel URL
+3. **Test Sign Up/Login**: Create an account
+4. **Test Core Features**: Family setup, children, activities
+
+### 6. Done! 🎉
+
+See `DEPLOYMENT_COMPLETE.md` for detailed testing checklist and troubleshooting.
 
 Share your Vercel URL with testers.
 
