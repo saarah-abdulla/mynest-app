@@ -57,16 +57,8 @@ try {
 // Initialize Firebase Authentication
 // For Capacitor, we use standard getAuth (not React Native persistence)
 // The authDomain should be the Firebase project domain, not a custom URL scheme
-let auth
-try {
-  auth = getAuth(app)
-  console.log('✅ Firebase Auth initialized successfully')
-} catch (error) {
-  console.error('❌ Firebase Auth initialization failed:', error)
-  throw error
-}
-
-export { auth }
+export const auth = getAuth(app)
+console.log('✅ Firebase Auth initialized successfully')
 export default app
 
 
