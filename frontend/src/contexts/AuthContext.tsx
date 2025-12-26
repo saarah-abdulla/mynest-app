@@ -54,15 +54,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function login(email: string, password: string) {
     console.log('[AuthContext] login called with email:', email)
-    return signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        console.log('[AuthContext] signInWithEmailAndPassword successful, user:', userCredential.user.email)
+    console.log('[AuthContext] auth object:', auth)
+    console.log('[AuthContext] auth app:', auth.app?.name)
+    
+    // Add timeout to prevent hanging
+    const loginPromise = signInWithEmailAndPassword(auth, email, password)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Login request timed out. Please check your internet connection and try again.'))
+      }, 15000) // 15 second timeout
+    })
+    
+    return Promise.race([loginPromise, timeoutPromise])
+      .then((userCredential: any) => {
+        console.log('[AuthContext] signInWithEmailAndPassword successful, user:', userCredential.user?.email)
         // User login handled by onAuthStateChanged
+        return userCredential
       })
       .catch((error) => {
         console.error('[AuthContext] signInWithEmailAndPassword error:', error)
         console.error('[AuthContext] Error code:', error.code)
         console.error('[AuthContext] Error message:', error.message)
+        console.error('[AuthContext] Full error:', JSON.stringify(error, null, 2))
         throw error
       })
   }
