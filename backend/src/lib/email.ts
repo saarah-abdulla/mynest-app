@@ -62,8 +62,17 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
     throw error
   }
 
+  // Validate SMTP_FROM - it should not contain "apikey"
+  const smtpFrom = process.env.SMTP_FROM || `"MyNest" <${process.env.SMTP_USER || 'noreply@mynest.app'}>`
+  if (smtpFrom.includes('apikey')) {
+    console.error('❌ SMTP_FROM contains "apikey" - this is incorrect!')
+    console.error('   For SendGrid, SMTP_FROM must be a verified email address.')
+    console.error('   Example: "MyNest" <your-verified-email@gmail.com>')
+    console.error('   See docs/fix-sendgrid-email.md for setup instructions.')
+  }
+
   const mailOptions = {
-    from: process.env.SMTP_FROM || `"MyNest" <${process.env.SMTP_USER || 'noreply@mynest.app'}>`,
+    from: smtpFrom,
     to,
     subject: `You've been invited to join ${familyName} on MyNest`,
     html: `
