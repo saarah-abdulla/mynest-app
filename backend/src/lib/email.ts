@@ -68,30 +68,45 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
               margin-bottom: 30px;
             }
             .logo {
-              font-size: 24px;
+              font-size: 32px;
               font-weight: bold;
               color: #795548;
-              margin-bottom: 10px;
+              margin-bottom: 20px;
+              background-color: #FFEB3B;
+              display: inline-block;
+              padding: 8px 16px;
+              border-radius: 8px;
             }
             h1 {
               color: #795548;
-              font-size: 24px;
+              font-size: 28px;
+              font-weight: bold;
               margin-bottom: 20px;
+              text-align: center;
             }
             .content {
               color: #795548;
               font-size: 16px;
               margin-bottom: 30px;
+              line-height: 1.8;
+            }
+            .mynest-highlight {
+              background-color: #FFEB3B;
+              padding: 2px 4px;
+              border-radius: 4px;
+              font-weight: 600;
             }
             .button {
               display: inline-block;
-              padding: 14px 28px;
+              padding: 14px 32px;
               background-color: #B4BFAB;
-              color: white;
+              color: #FFFFFF;
               text-decoration: none;
-              border-radius: 8px;
+              border-radius: 12px;
               font-weight: 600;
+              font-size: 16px;
               margin: 20px 0;
+              text-align: center;
             }
             .button:hover {
               background-color: #879678;
@@ -120,17 +135,17 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
               <p>Hi ${caregiverName},</p>
               <p>
                 <strong>${inviterName}</strong> has invited you to join <strong>${familyName}</strong> 
-                as a caregiver on MyNest, a platform for coordinating childcare.
+                as a caregiver on <span class="mynest-highlight">MyNest</span>, a platform for coordinating childcare.
               </p>
               <p>
                 Click the button below to accept the invitation and create your account:
               </p>
-              <div style="text-align: center;">
+              <div style="text-align: center; margin: 30px 0;">
                 <a href="${invitationLink}" class="button">Accept Invitation</a>
               </div>
-              <p style="font-size: 14px; color: #795548; opacity: 0.7;">
+              <p style="font-size: 14px; color: #795548; opacity: 0.7; margin-top: 20px;">
                 Or copy and paste this link into your browser:<br>
-                <span class="link">${invitationLink}</span>
+                <span class="link" style="color: #795548; word-break: break-all;">${invitationLink}</span>
               </p>
               <p style="font-size: 14px; color: #795548; opacity: 0.7; margin-top: 20px;">
                 This invitation will expire in 7 days.
