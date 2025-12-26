@@ -70,12 +70,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user)
-      setLoading(false)
-    })
+    console.log('[AuthContext] Setting up onAuthStateChanged listener')
+    
+    let isMounted = true
+    
+    // Check current user immediately as fallback
+    const checkCurrentUser = () => {
+      try {
+        const currentUser = auth.currentUser
+        console.log('[AuthContext] Current user check:', currentUser ? currentUser.email : 'null')
+        if (isMounted && currentUser !== null) {
+          // If there's a current user, set it immediately
+          setCurrentUser(currentUser)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('[AuthContext] Error checking current user:', error)
+      }
+    }
+    
+    // Set a timeout fallback to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isMounted) {
+        console.warn('[AuthContext] onAuthStateChanged timeout - using current user fallback')
+        checkCurrentUser()
+        // If still loading after timeout, force it to false
+        setLoading(false)
+      }
+    }, 3000) // 3 second timeout
 
-    return unsubscribe
+    // Check current user after a short delay (in case auth is still initializing)
+    const initialCheckTimeout = setTimeout(() => {
+      checkCurrentUser()
+    }, 100)
+
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (isMounted) {
+          console.log('[AuthContext] onAuthStateChanged fired, user:', user ? user.email : 'null')
+          clearTimeout(timeoutId)
+          clearTimeout(initialCheckTimeout)
+          setCurrentUser(user)
+          setLoading(false)
+        }
+      },
+      (error) => {
+        if (isMounted) {
+          console.error('[AuthContext] onAuthStateChanged error:', error)
+          clearTimeout(timeoutId)
+          clearTimeout(initialCheckTimeout)
+          setLoading(false)
+        }
+      }
+    )
+
+    return () => {
+      isMounted = false
+      clearTimeout(timeoutId)
+      clearTimeout(initialCheckTimeout)
+      unsubscribe()
+    }
   }, [])
 
   const value = {
