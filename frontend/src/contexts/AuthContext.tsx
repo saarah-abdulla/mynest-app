@@ -64,8 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (authAny._initializationPromise) {
       try {
         console.log('[AuthContext] Waiting for Firebase Auth to initialize...')
-        await authAny._initializationPromise
-        console.log('[AuthContext] Firebase Auth initialized, proceeding with login')
+        // Add timeout to initialization wait - if it's stuck, proceed anyway
+        const initPromise = authAny._initializationPromise
+        const initTimeout = new Promise((resolve) => {
+          setTimeout(() => {
+            console.warn('[AuthContext] Firebase Auth initialization timeout - proceeding anyway')
+            resolve(undefined)
+          }, 3000) // 3 second timeout for initialization
+        })
+        await Promise.race([initPromise, initTimeout])
+        console.log('[AuthContext] Firebase Auth initialization check completed, proceeding with login')
       } catch (initError) {
         console.error('[AuthContext] Firebase Auth initialization error:', initError)
         // Continue anyway - might still work
