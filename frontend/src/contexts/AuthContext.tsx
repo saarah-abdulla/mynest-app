@@ -53,9 +53,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function login(email: string, password: string) {
-    return signInWithEmailAndPassword(auth, email, password).then(() => {
-      // User login handled by onAuthStateChanged
-    })
+    console.log('[AuthContext] login called with email:', email)
+    return signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        console.log('[AuthContext] signInWithEmailAndPassword successful, user:', userCredential.user.email)
+        // User login handled by onAuthStateChanged
+      })
+      .catch((error) => {
+        console.error('[AuthContext] signInWithEmailAndPassword error:', error)
+        console.error('[AuthContext] Error code:', error.code)
+        console.error('[AuthContext] Error message:', error.message)
+        throw error
+      })
   }
 
   function loginWithGoogle() {

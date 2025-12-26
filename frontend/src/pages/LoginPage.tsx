@@ -28,24 +28,35 @@ export function LoginPage() {
 
     try {
       setLoading(true)
+      console.log('[LoginPage] Attempting to sign in with email:', email)
       await login(email, password)
+      console.log('[LoginPage] Login successful, waiting for auth state...')
       
-      // Wait a moment for Firebase to initialize
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Wait a moment for Firebase auth state to update
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       // If there's an invitation token, accept it automatically
       if (invitationToken) {
         try {
+          console.log('[LoginPage] Accepting invitation token:', invitationToken)
           await api.acceptInvitation(invitationToken)
+          console.log('[LoginPage] Invitation accepted successfully')
         } catch (inviteErr) {
-          console.error('Error accepting invitation:', inviteErr)
+          console.error('[LoginPage] Error accepting invitation:', inviteErr)
           // Continue to dashboard even if invitation acceptance fails
         }
       }
       
+      console.log('[LoginPage] Navigating to dashboard...')
       navigate('/dashboard')
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in')
+      console.error('[LoginPage] Login error:', err)
+      console.error('[LoginPage] Error details:', {
+        message: err.message,
+        code: err.code,
+        stack: err.stack,
+      })
+      setError(err.message || 'Failed to sign in. Please check your credentials and try again.')
     } finally {
       setLoading(false)
     }
