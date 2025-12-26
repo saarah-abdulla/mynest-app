@@ -52,10 +52,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { user: userCredential.user }
   }
 
-  function login(email: string, password: string) {
+  async function login(email: string, password: string) {
     console.log('[AuthContext] login called with email:', email)
     console.log('[AuthContext] auth object:', auth)
     console.log('[AuthContext] auth app:', auth.app?.name)
+    
+    // Wait for Firebase Auth to initialize before attempting login
+    // This is critical for Capacitor apps where initialization can be delayed
+    // Access private _initializationPromise via type assertion
+    const authAny = auth as any
+    if (authAny._initializationPromise) {
+      try {
+        console.log('[AuthContext] Waiting for Firebase Auth to initialize...')
+        await authAny._initializationPromise
+        console.log('[AuthContext] Firebase Auth initialized, proceeding with login')
+      } catch (initError) {
+        console.error('[AuthContext] Firebase Auth initialization error:', initError)
+        // Continue anyway - might still work
+      }
+    }
+    
+    // Add a small delay to ensure auth is ready
+    await new Promise(resolve => setTimeout(resolve, 100))
     
     // Add timeout to prevent hanging
     const loginPromise = signInWithEmailAndPassword(auth, email, password)
