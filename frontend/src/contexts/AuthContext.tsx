@@ -88,22 +88,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error('Login request timed out. Please check your internet connection and try again.'))
-      }, 15000) // 15 second timeout
+      }, 5000) // 5 second timeout (reduced since network requests complete quickly)
     })
     
-    return Promise.race([loginPromise, timeoutPromise])
-      .then((userCredential: any) => {
-        console.log('[AuthContext] signInWithEmailAndPassword successful, user:', userCredential.user?.email)
-        // User login handled by onAuthStateChanged
-        return userCredential
-      })
-      .catch((error) => {
-        console.error('[AuthContext] signInWithEmailAndPassword error:', error)
-        console.error('[AuthContext] Error code:', error.code)
-        console.error('[AuthContext] Error message:', error.message)
-        console.error('[AuthContext] Full error:', JSON.stringify(error, null, 2))
-        throw error
-      })
+    try {
+      const userCredential = await Promise.race([loginPromise, timeoutPromise]) as any
+      console.log('[AuthContext] signInWithEmailAndPassword successful, user:', userCredential?.user?.email)
+      // User login handled by onAuthStateChanged
+      return userCredential
+    } catch (error: any) {
+      // If timeout, check if user was actually logged in (network request might have succeeded)
+      if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
+        console.warn('[AuthContext] Login timeout, checking if user was authenticated anyway...')
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second for auth state to update
+        
+        const currentUser = auth.currentUser
+        if (currentUser) {
+          console.log('[AuthContext] User was authenticated despite timeout, user:', currentUser.email)
+          // Return a mock credential object - onAuthStateChanged should pick this up
+          // but if it's stuck, the user state might not update immediately
+          return { user: currentUser } as any
+        }
+      }
+      
+      console.error('[AuthContext] signInWithEmailAndPassword error:', error)
+      console.error('[AuthContext] Error code:', error.code)
+      console.error('[AuthContext] Error message:', error.message)
+      console.error('[AuthContext] Full error:', JSON.stringify(error, null, 2))
+      throw error
+    }
   }
 
   function loginWithGoogle() {
