@@ -9,11 +9,22 @@ const emailConfig = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
   },
+  // Connection timeout settings
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000, // 10 seconds
+  socketTimeout: 10000, // 10 seconds
+  // Retry settings
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 3,
 }
+
+// Check if SMTP is configured
+const isSMTPConfigured = Boolean(emailConfig.auth.user && emailConfig.auth.pass)
 
 // Create transporter (only if credentials are provided)
 const transporter = nodemailer.createTransport(
-  emailConfig.auth.user && emailConfig.auth.pass
+  isSMTPConfigured
     ? emailConfig
     : {
         // For development/testing without real SMTP
@@ -26,6 +37,13 @@ const transporter = nodemailer.createTransport(
       },
 )
 
+// Log SMTP configuration status on startup
+if (!isSMTPConfigured) {
+  console.warn('⚠️  SMTP not configured! Invitation emails will not be sent.')
+  console.warn('   Set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD in Railway environment variables.')
+  console.warn('   See docs/email-setup-guide.md for setup instructions.')
+}
+
 export interface InvitationEmailData {
   to: string
   caregiverName: string
@@ -36,6 +54,13 @@ export interface InvitationEmailData {
 
 export async function sendInvitationEmail(data: InvitationEmailData): Promise<void> {
   const { to, caregiverName, familyName, inviterName, invitationLink } = data
+
+  // Check if SMTP is configured
+  if (!isSMTPConfigured) {
+    const error = new Error('SMTP not configured. Please set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASSWORD in Railway environment variables.')
+    console.error('❌ Cannot send invitation email:', error.message)
+    throw error
+  }
 
   const mailOptions = {
     from: process.env.SMTP_FROM || `"MyNest" <${process.env.SMTP_USER || 'noreply@mynest.app'}>`,
@@ -174,16 +199,58 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
   }
 
   try {
+    console.log(`📧 Attempting to send invitation email to: ${to}`)
+    console.log(`   From: ${mailOptions.from}`)
+    console.log(`   Subject: ${mailOptions.subject}`)
+    
     const info = await transporter.sendMail(mailOptions)
-    console.log('Invitation email sent:', info.messageId)
+    console.log(`✅ Invitation email sent successfully to ${to}`)
+    console.log(`   Message ID: ${info.messageId}`)
     
     // In development with ethereal, log the preview URL
     if (process.env.NODE_ENV !== 'production' && info.response.includes('ethereal')) {
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info))
+      const previewUrl = nodemailer.getTestMessageUrl(info)
+      if (previewUrl) {
+        console.log(`   Preview URL: ${previewUrl}`)
+      }
     }
-  } catch (error) {
-    console.error('Error sending invitation email:', error)
-    throw new Error('Failed to send invitation email')
+  } catch (error: any) {
+    console.error('❌ Error sending invitation email:')
+    console.error('   To:', to)
+    console.error('   SMTP Host:', emailConfig.host)
+    console.error('   SMTP Port:', emailConfig.port)
+    console.error('   Error:', error.message)
+    if (error.code) {
+      console.error('   Error Code:', error.code)
+    }
+    if (error.command) {
+      console.error('   Failed Command:', error.command)
+    }
+    if (error.response) {
+      console.error('   SMTP Response:', error.response)
+    }
+    if (error.responseCode) {
+      console.error('   Response Code:', error.responseCode)
+    }
+    
+    // Provide helpful error message with troubleshooting steps
+    let errorMessage = 'Failed to send invitation email'
+    if (error.code === 'EAUTH') {
+      errorMessage = 'SMTP authentication failed. Check SMTP_USER and SMTP_PASSWORD in Railway. For Gmail, use an App Password, not your regular password.'
+    } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+      errorMessage = `Cannot connect to SMTP server (${emailConfig.host}:${emailConfig.port}). This could be due to:\n` +
+        '1. Incorrect SMTP_HOST or SMTP_PORT in Railway\n' +
+        '2. Network/firewall blocking the connection\n' +
+        '3. SMTP server is down or unreachable\n' +
+        '4. Railway IP may be blocked by the SMTP provider\n' +
+        'Try using a different SMTP provider (SendGrid, Mailgun, AWS SES) that works better with cloud platforms.'
+    } else if (error.code === 'EENVELOPE') {
+      errorMessage = 'Invalid email address. Check the recipient email format.'
+    } else if (error.message) {
+      errorMessage = `Failed to send email: ${error.message}`
+    }
+    
+    throw new Error(errorMessage)
   }
 }
 

@@ -237,10 +237,12 @@ router.post(
                   inviterName: inviter.displayName,
                   invitationLink,
                 })
-                console.log(`Invitation email sent to ${data.email} for caregiver ${created.id}`)
-              } catch (emailError) {
-                console.error('Failed to send invitation email:', emailError)
-                // Email failure is not critical
+                console.log(`✅ Invitation email sent successfully to ${data.email} for caregiver ${created.id}`)
+              } catch (emailError: any) {
+                console.error('❌ Failed to send invitation email:', emailError.message || emailError)
+                console.error('   Caregiver was created successfully, but email could not be sent.')
+                console.error('   Please check Railway logs and SMTP configuration.')
+                // Email failure is not critical - caregiver is still created
               }
             } catch (invitationError: any) {
               // If invitation creation fails (e.g., table doesn't exist), log but don't fail
