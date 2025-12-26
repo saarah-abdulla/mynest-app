@@ -54,90 +54,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     console.log('[AuthContext] login called with email:', email)
-    console.log('[AuthContext] auth object:', auth)
-    console.log('[AuthContext] auth app:', auth.app?.name)
     
-    // Wait for Firebase Auth to initialize before attempting login
-    // This is critical for Capacitor apps where initialization can be delayed
-    // Access private _initializationPromise via type assertion
+    // Workaround: Use Firebase REST API directly since Firebase Auth SDK is stuck
+    // This is needed because Firebase Auth initialization promise hangs in Capacitor
     const authAny = auth as any
-    if (authAny._initializationPromise) {
-      try {
-        console.log('[AuthContext] Waiting for Firebase Auth to initialize...')
-        // Add timeout to initialization wait - if it's stuck, proceed anyway
-        const initPromise = authAny._initializationPromise
-        const initTimeout = new Promise((resolve) => {
-          setTimeout(() => {
-            console.warn('[AuthContext] Firebase Auth initialization timeout - proceeding anyway')
-            resolve(undefined)
-          }, 3000) // 3 second timeout for initialization
-        })
-        await Promise.race([initPromise, initTimeout])
-        console.log('[AuthContext] Firebase Auth initialization check completed, proceeding with login')
-      } catch (initError) {
-        console.error('[AuthContext] Firebase Auth initialization error:', initError)
-        // Continue anyway - might still work
-      }
+    const apiKey = authAny.app?.options?.apiKey || import.meta.env.VITE_FIREBASE_API_KEY
+    
+    if (!apiKey) {
+      throw new Error('Firebase API key not found')
     }
     
-    // Add a small delay to ensure auth is ready
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    // Start the login request
-    const loginPromise = signInWithEmailAndPassword(auth, email, password)
-    
-    // Since network requests complete quickly (~1 second) but Firebase Auth promise hangs,
-    // we'll check auth.currentUser periodically after a short delay
-    const checkUserInterval = setInterval(() => {
-      const currentUser = auth.currentUser
-      if (currentUser) {
-        console.log('[AuthContext] User authenticated detected via currentUser check:', currentUser.email)
-        clearInterval(checkUserInterval)
-      }
-    }, 500) // Check every 500ms
-    
-    // Add timeout to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        clearInterval(checkUserInterval)
-        reject(new Error('Login request timed out. Please check your internet connection and try again.'))
-      }, 3000) // 3 second timeout (network requests complete in ~1 second)
-    })
+    console.log('[AuthContext] Using Firebase REST API for login (Firebase Auth SDK workaround)')
     
     try {
-      const userCredential = await Promise.race([loginPromise, timeoutPromise]) as any
-      clearInterval(checkUserInterval)
-      console.log('[AuthContext] signInWithEmailAndPassword successful, user:', userCredential?.user?.email)
-      // User login handled by onAuthStateChanged
-      return userCredential
-    } catch (error: any) {
-      clearInterval(checkUserInterval)
-      
-      // If timeout, check if user was actually logged in (network request succeeded)
-      if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
-        console.warn('[AuthContext] Login timeout, checking if user was authenticated anyway...')
-        
-        // Check multiple times with increasing delays
-        for (let i = 0; i < 5; i++) {
-          await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))) // 200ms, 400ms, 600ms, 800ms, 1000ms
-          const currentUser = auth.currentUser
-          if (currentUser) {
-            console.log('[AuthContext] User was authenticated despite timeout, user:', currentUser.email)
-            // Manually update auth state since onAuthStateChanged might be stuck
-            // Force update by calling setCurrentUser directly
-            setCurrentUser(currentUser)
-            // Return a mock credential object
-            return { user: currentUser } as any
-          }
+      // Call Firebase REST API directly
+      const response = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            returnSecureToken: true,
+          }),
         }
-        
-        console.error('[AuthContext] Timeout and user not found in auth.currentUser after multiple checks')
+      )
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('[AuthContext] Firebase REST API error:', errorData)
+        throw new Error(errorData.error?.message || 'Login failed')
       }
       
-      console.error('[AuthContext] signInWithEmailAndPassword error:', error)
-      console.error('[AuthContext] Error code:', error.code)
-      console.error('[AuthContext] Error message:', error.message)
-      console.error('[AuthContext] Full error:', JSON.stringify(error, null, 2))
+      const data = await response.json()
+      console.log('[AuthContext] Firebase REST API login successful, email:', data.email)
+      
+      // Store the idToken in sessionStorage so API calls can use it
+      if (data.idToken) {
+        sessionStorage.setItem('firebase_id_token', data.idToken)
+        sessionStorage.setItem('firebase_user_email', data.email)
+        sessionStorage.setItem('firebase_user_id', data.localId)
+        console.log('[AuthContext] Stored idToken in sessionStorage')
+      }
+      
+      // Now try to use the SDK method - it might work now that we have the token
+      // Or we can manually set auth state by forcing a refresh
+      try {
+        // Try the SDK method one more time - it might work now
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        console.log('[AuthContext] SDK login also succeeded')
+        return userCredential
+      } catch (sdkError) {
+        console.warn('[AuthContext] SDK login still failed, but REST API succeeded:', sdkError)
+        // Create a minimal user object for the response
+        // The API calls will use the token from sessionStorage
+        // Manually update auth state
+        const mockUser = {
+          email: data.email,
+          uid: data.localId,
+          getIdToken: async () => data.idToken,
+        } as any
+        setCurrentUser(mockUser)
+        return {
+          user: mockUser,
+        } as any
+      }
+    } catch (error: any) {
+      console.error('[AuthContext] Login error:', error)
       throw error
     }
   }

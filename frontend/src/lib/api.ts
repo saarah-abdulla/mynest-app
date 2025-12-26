@@ -88,6 +88,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 async function getFirebaseToken(): Promise<string | null> {
   try {
+    // First check sessionStorage (workaround for Capacitor Firebase Auth issue)
+    const storedToken = sessionStorage.getItem('firebase_id_token')
+    if (storedToken) {
+      console.log('[API] Using token from sessionStorage (Firebase Auth workaround)')
+      return storedToken
+    }
+    
     // Use the already-initialized auth instance
     const { auth } = await import('./firebase')
     const user = auth.currentUser
