@@ -32,18 +32,41 @@ if (missingVars.length > 0) {
   throw new Error(`Firebase configuration incomplete. Missing: ${missingVars.join(', ')}`)
 }
 
+// Validate authDomain format (must be a valid domain, not a URL scheme)
+if (firebaseConfig.authDomain && (firebaseConfig.authDomain.startsWith('capacitor://') || firebaseConfig.authDomain.startsWith('http://') || firebaseConfig.authDomain.startsWith('https://'))) {
+  console.error('❌ Firebase authDomain must be a valid domain name (e.g., myproject.firebaseapp.com), not a URL scheme')
+  console.error('Current authDomain:', firebaseConfig.authDomain)
+  console.error('For Capacitor apps, use your Firebase project domain: your-project.firebaseapp.com')
+  throw new Error(`Invalid authDomain format: ${firebaseConfig.authDomain}. Must be a valid domain like 'your-project.firebaseapp.com'`)
+}
+
 // Initialize Firebase
 let app
 try {
   app = initializeApp(firebaseConfig)
   console.log('✅ Firebase initialized successfully')
+  console.log('Firebase config:', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+  })
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error)
   throw error
 }
 
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app)
+// Initialize Firebase Authentication
+// For Capacitor, we use standard getAuth (not React Native persistence)
+// The authDomain should be the Firebase project domain, not a custom URL scheme
+let auth
+try {
+  auth = getAuth(app)
+  console.log('✅ Firebase Auth initialized successfully')
+} catch (error) {
+  console.error('❌ Firebase Auth initialization failed:', error)
+  throw error
+}
+
+export { auth }
 export default app
 
 
