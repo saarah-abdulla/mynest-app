@@ -179,3 +179,4 @@ After DNS is configured:
 
 3. Consider setting up a redirect preference (www to non-www or vice versa) in Vercel settings
 
+

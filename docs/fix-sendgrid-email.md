@@ -153,3 +153,4 @@ If SendGrid continues to timeout, the issue might be:
 
 **Try Mailgun instead** - it's often more reliable with cloud platforms.
 
+

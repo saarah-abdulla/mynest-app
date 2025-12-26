@@ -69,3 +69,4 @@ If you get connection errors:
 3. Check your credentials are correct in `.env.test`
 4. Test the connection: `psql "postgresql://user:pass@localhost:5432/mynest_test2"`
 
+

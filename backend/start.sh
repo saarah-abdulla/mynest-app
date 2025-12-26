@@ -17,3 +17,4 @@ fi
 echo "Starting server..."
 node dist/index.js
 
+

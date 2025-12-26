@@ -153,3 +153,4 @@ If SMTP variables are not set, the backend uses Ethereal Email (test service):
 3. **Verify Variables** - Make sure all SMTP variables are set correctly
 4. **Check Email Service** - Verify your email provider is working
 
+

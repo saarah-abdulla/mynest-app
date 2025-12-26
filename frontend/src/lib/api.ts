@@ -20,8 +20,9 @@ console.log('[API] Environment check:', {
   mode: import.meta.env.MODE,
 })
 
-// Warn if using localhost in production
-if (import.meta.env.PROD && API_BASE_URL.includes('localhost')) {
+// Warn if using localhost in production web browser (but allow it in Capacitor for local dev)
+const isCapacitor = typeof (window as any).Capacitor !== 'undefined'
+if (import.meta.env.PROD && API_BASE_URL.includes('localhost') && !isCapacitor) {
   console.error(
     '❌ CRITICAL ERROR: VITE_API_BASE_URL is not set correctly in Vercel!\n' +
     'Current value:', import.meta.env.VITE_API_BASE_URL, '\n' +
@@ -32,6 +33,8 @@ if (import.meta.env.PROD && API_BASE_URL.includes('localhost')) {
     '3. Make sure it\'s set for "Production" environment\n' +
     '4. Redeploy WITHOUT build cache'
   )
+} else if (isCapacitor && API_BASE_URL.includes('localhost')) {
+  console.log('ℹ️ Running in Capacitor with localhost backend. Make sure your backend is running at http://localhost:4000')
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

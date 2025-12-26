@@ -122,3 +122,4 @@ FRONTEND_URL=https://mynest-app.vercel.app
 4. **Test** by creating a caregiver invitation
 5. **Check logs** for success message
 
+

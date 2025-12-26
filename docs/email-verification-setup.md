@@ -75,3 +75,4 @@ For early testing, **no email verification is fine**. You can add it later if ne
 If you want to test email functionality, try:
 - Inviting a caregiver (this will send an email if SMTP is configured)
 
+

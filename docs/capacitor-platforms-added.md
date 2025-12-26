@@ -260,3 +260,4 @@ After making changes to your React app:
 - [Capacitor Android Guide](https://capacitorjs.com/docs/android)
 - [Capacitor Workflow](https://capacitorjs.com/docs/basics/workflow)
 
+

@@ -51,3 +51,4 @@ VITE_API_BASE_URL=https://mynest-app-production.up.railway.app/api
 3. Make sure you included `/api` at the end of the URL
 4. Make sure you redeployed after adding the variable
 
+

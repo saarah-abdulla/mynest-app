@@ -74,3 +74,4 @@ Make sure these are set in your **backend service** (not database service):
 - Verify database has proper permissions
 - Check Railway logs for specific error messages
 
+

@@ -111,3 +111,4 @@ Once CORS is fixed, you should be able to:
 **Variable Name:** `ALLOW_ORIGINS`
 **Variable Value:** `https://mynest-app.vercel.app,https://www.mynest.ae,https://mynest.ae,http://localhost:5173`
 
+

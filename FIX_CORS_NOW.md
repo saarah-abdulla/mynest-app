@@ -70,3 +70,4 @@ curl -H "Origin: https://mynest-pk0edtdj2-saarahs-projects-a9475d0e.vercel.app" 
 
 You should see CORS headers in the response.
 
+

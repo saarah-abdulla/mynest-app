@@ -84,3 +84,4 @@ If you see errors about invalid key format, try:
 - Check it's in the backend service, not database service
 - Ensure it's saved (Railway auto-saves)
 
+

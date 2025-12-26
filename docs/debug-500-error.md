@@ -124,3 +124,4 @@ If you're still getting a 500 error after checking logs:
 2. **Check the request payload** - verify all required fields are present
 3. **Verify database migrations** - ensure schema is up to date
 
+

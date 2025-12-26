@@ -319,3 +319,4 @@ https://your-vercel-app.vercel.app/reset-password?oobCode=%LINK%
 
 **Note:** Email verification is not currently enabled in the app code. Even if you configure the template, emails won't be sent until you add the code to trigger them (see `docs/email-verification-setup.md`).
 
+
