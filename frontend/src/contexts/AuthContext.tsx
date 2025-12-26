@@ -83,32 +83,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Add a small delay to ensure auth is ready
     await new Promise(resolve => setTimeout(resolve, 100))
     
-    // Add timeout to prevent hanging
+    // Start the login request
     const loginPromise = signInWithEmailAndPassword(auth, email, password)
+    
+    // Since network requests complete quickly (~1 second) but Firebase Auth promise hangs,
+    // we'll check auth.currentUser periodically after a short delay
+    const checkUserInterval = setInterval(() => {
+      const currentUser = auth.currentUser
+      if (currentUser) {
+        console.log('[AuthContext] User authenticated detected via currentUser check:', currentUser.email)
+        clearInterval(checkUserInterval)
+      }
+    }, 500) // Check every 500ms
+    
+    // Add timeout to prevent hanging
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
+        clearInterval(checkUserInterval)
         reject(new Error('Login request timed out. Please check your internet connection and try again.'))
-      }, 5000) // 5 second timeout (reduced since network requests complete quickly)
+      }, 3000) // 3 second timeout (network requests complete in ~1 second)
     })
     
     try {
       const userCredential = await Promise.race([loginPromise, timeoutPromise]) as any
+      clearInterval(checkUserInterval)
       console.log('[AuthContext] signInWithEmailAndPassword successful, user:', userCredential?.user?.email)
       // User login handled by onAuthStateChanged
       return userCredential
     } catch (error: any) {
-      // If timeout, check if user was actually logged in (network request might have succeeded)
+      clearInterval(checkUserInterval)
+      
+      // If timeout, check if user was actually logged in (network request succeeded)
       if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
         console.warn('[AuthContext] Login timeout, checking if user was authenticated anyway...')
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second for auth state to update
         
-        const currentUser = auth.currentUser
-        if (currentUser) {
-          console.log('[AuthContext] User was authenticated despite timeout, user:', currentUser.email)
-          // Return a mock credential object - onAuthStateChanged should pick this up
-          // but if it's stuck, the user state might not update immediately
-          return { user: currentUser } as any
+        // Check multiple times with increasing delays
+        for (let i = 0; i < 5; i++) {
+          await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))) // 200ms, 400ms, 600ms, 800ms, 1000ms
+          const currentUser = auth.currentUser
+          if (currentUser) {
+            console.log('[AuthContext] User was authenticated despite timeout, user:', currentUser.email)
+            // Manually update auth state since onAuthStateChanged might be stuck
+            // Force update by calling setCurrentUser directly
+            setCurrentUser(currentUser)
+            // Return a mock credential object
+            return { user: currentUser } as any
+          }
         }
+        
+        console.error('[AuthContext] Timeout and user not found in auth.currentUser after multiple checks')
       }
       
       console.error('[AuthContext] signInWithEmailAndPassword error:', error)
