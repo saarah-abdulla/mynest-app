@@ -104,34 +104,27 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
               text-align: center;
               margin-bottom: 30px;
             }
-            .logo {
-              font-size: 32px;
-              font-weight: bold;
-              color: #795548;
-              margin-bottom: 20px;
-              background-color: #FFEB3B;
-              display: inline-block;
-              padding: 8px 16px;
-              border-radius: 8px;
-            }
             h1 {
               color: #795548;
               font-size: 28px;
               font-weight: bold;
               margin-bottom: 20px;
               text-align: center;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+            }
+            .logo-img {
+              width: 48px;
+              height: 48px;
+              vertical-align: middle;
             }
             .content {
               color: #795548;
               font-size: 16px;
               margin-bottom: 30px;
               line-height: 1.8;
-            }
-            .mynest-highlight {
-              background-color: #FFEB3B;
-              padding: 2px 4px;
-              border-radius: 4px;
-              font-weight: 600;
             }
             .button {
               display: inline-block;
@@ -164,15 +157,15 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
         </head>
         <body>
           <div class="container">
-            <div class="header">
-              <div class="logo">MyNest</div>
-            </div>
-            <h1>You've been invited!</h1>
+            <h1>
+              <img src="${process.env.FRONTEND_URL || 'https://mynest-app.vercel.app'}/mynest-logo.png" alt="MyNest" class="logo-img" />
+              You've been invited!
+            </h1>
             <div class="content">
               <p>Hi ${caregiverName},</p>
               <p>
                 <strong>${inviterName}</strong> has invited you to join <strong>${familyName}</strong> 
-                as a caregiver on <span class="mynest-highlight">MyNest</span>, a platform for coordinating childcare.
+                as a caregiver on <strong>MyNest</strong>, a platform for coordinating childcare.
               </p>
               <p>
                 Click the button below to accept the invitation and create your account:
