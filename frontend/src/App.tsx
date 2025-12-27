@@ -15,6 +15,7 @@ import { SetupReviewPage } from './pages/SetupReviewPage'
 import { LandingPage } from './pages/LandingPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { SetupProfilePage } from './pages/SetupProfilePage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAuth } from './contexts/AuthContext'
 import { LoadingSpinner } from './components/LoadingSpinner'
@@ -117,6 +118,7 @@ function App() {
         }
       />
       <Route path="/" element={<LandingPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

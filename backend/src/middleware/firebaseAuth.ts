@@ -40,6 +40,18 @@ export async function verifyFirebaseToken(req: Request, res: Response, next: Nex
     return next()
   }
   
+  // Allow public access to GET /api/invitations/:token (for viewing invitation details)
+  // This endpoint should be accessible without authentication so people can view invitations
+  // Check both with and without /api prefix since path depends on how Express processes it
+  const isInvitationGetRequest = req.method === 'GET' && (
+    req.path === '/invitations' && req.url.match(/^\/invitations\/[^\/]+$/) ||
+    req.path.match(/^\/invitations\/[^\/]+$/) ||
+    req.path.match(/^\/api\/invitations\/[^\/]+$/)
+  )
+  if (isInvitationGetRequest) {
+    return next()
+  }
+  
   // If SKIP_AUTH is true, try to extract user info but don't require it
   const skipAuth = process.env.SKIP_AUTH === 'true'
   
