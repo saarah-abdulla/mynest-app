@@ -1,5 +1,8 @@
 import nodemailer from 'nodemailer'
 
+// Check if we should use SendGrid API instead of SMTP
+const useSendGridAPI = process.env.SENDGRID_API_KEY && !process.env.SMTP_HOST?.includes('gmail')
+
 // Email configuration from environment variables
 const emailConfig = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -9,10 +12,10 @@ const emailConfig = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
   },
-  // Connection timeout settings
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000, // 10 seconds
-  socketTimeout: 10000, // 10 seconds
+  // Connection timeout settings (increased for cloud platforms)
+  connectionTimeout: 30000, // 30 seconds (increased from 10)
+  greetingTimeout: 30000, // 30 seconds (increased from 10)
+  socketTimeout: 30000, // 30 seconds (increased from 10)
   // Retry settings
   pool: true,
   maxConnections: 1,
@@ -212,6 +215,24 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
     console.log(`   From: ${mailOptions.from}`)
     console.log(`   Subject: ${mailOptions.subject}`)
     
+    // Try SendGrid API first if configured
+    if (useSendGridAPI && process.env.SENDGRID_API_KEY) {
+      try {
+        await sendViaSendGridAPI({
+          to,
+          from: mailOptions.from,
+          subject: mailOptions.subject,
+          html: mailOptions.html,
+          text: mailOptions.text,
+        })
+        console.log(`✅ Invitation email sent successfully via SendGrid API to ${to}`)
+        return
+      } catch (apiError: any) {
+        console.warn('⚠️  SendGrid API failed, falling back to SMTP:', apiError.message)
+        // Fall through to SMTP attempt
+      }
+    }
+    
     const info = await transporter.sendMail(mailOptions)
     console.log(`✅ Invitation email sent successfully to ${to}`)
     console.log(`   Message ID: ${info.messageId}`)
@@ -259,6 +280,65 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
       errorMessage = `Failed to send email: ${error.message}`
     }
     
+    throw new Error(errorMessage)
+  }
+}
+
+// Send email via SendGrid API (more reliable than SMTP on cloud platforms)
+async function sendViaSendGridAPI(data: {
+  to: string
+  from: string
+  subject: string
+  html: string
+  text: string
+}): Promise<void> {
+  const sendGridApiKey = process.env.SENDGRID_API_KEY
+  if (!sendGridApiKey) {
+    throw new Error('SENDGRID_API_KEY not configured')
+  }
+
+  // Extract email from "Name <email>" format
+  const extractEmail = (fromString: string): string => {
+    const match = fromString.match(/<(.+)>/)
+    return match ? match[1] : fromString
+  }
+
+  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${sendGridApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      personalizations: [{
+        to: [{ email: data.to }],
+        subject: data.subject,
+      }],
+      from: { email: extractEmail(data.from), name: data.from.match(/^"?([^<"]+)"?/)?.[1]?.trim() || 'MyNest' },
+      content: [
+        {
+          type: 'text/html',
+          value: data.html,
+        },
+        {
+          type: 'text/plain',
+          value: data.text,
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    let errorMessage = `SendGrid API error: ${response.status} ${response.statusText}`
+    try {
+      const errorJson = JSON.parse(errorText)
+      if (errorJson.errors && errorJson.errors.length > 0) {
+        errorMessage += ` - ${errorJson.errors.map((e: any) => e.message).join(', ')}`
+      }
+    } catch {
+      errorMessage += ` - ${errorText}`
+    }
     throw new Error(errorMessage)
   }
 }
