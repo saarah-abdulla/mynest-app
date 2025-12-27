@@ -290,6 +290,39 @@ router.post(
       }
     }
 
+    // Check if caregiver is already linked to a user (invitation already accepted)
+    const caregiver = await prisma.caregiver.findUnique({
+      where: { id: invitation.caregiverId },
+    })
+
+    if (!caregiver) {
+      return res.status(404).json({ error: 'Caregiver not found' })
+    }
+
+    if (caregiver.userId && caregiver.userId !== user.id) {
+      // Caregiver is already linked to a different user
+      return res.status(400).json({ 
+        error: 'This invitation has already been accepted by another user',
+        details: 'This caregiver account is already linked to a different user',
+      })
+    }
+
+    if (caregiver.userId === user.id) {
+      // User is already linked to this caregiver - invitation was already accepted
+      // Mark invitation as accepted if it's still pending (idempotency)
+      if (invitation.status === 'pending') {
+        await prisma.invitation.update({
+          where: { id: invitation.id },
+          data: { status: 'accepted' },
+        })
+      }
+      return res.json({
+        message: 'Invitation already linked successfully',
+        caregiverId: invitation.caregiverId,
+        familyId: invitation.familyId,
+      })
+    }
+
     // Link user to caregiver
     await prisma.caregiver.update({
       where: { id: invitation.caregiverId },
