@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
 import { asyncHandler } from '../middleware/asyncHandler'
+import { requireFamilyAccess } from '../middleware/requireFamilyAccess'
 import { prisma } from '../lib/prisma'
 
 const router = Router()
@@ -68,7 +69,30 @@ router.post(
 
 router.put(
   '/:id',
+  requireFamilyAccess,
   asyncHandler(async (req: Request, res: Response) => {
+    const authUser = (req as Request & { user?: { uid: string } }).user
+    const familyId = (req as Request & { familyId?: string }).familyId
+    
+    // Verify the family ID matches the user's family
+    if (req.params.id !== familyId) {
+      return res.status(403).json({ error: 'Forbidden: You can only update your own family' })
+    }
+    
+    // Check user role - only parents can edit family details
+    const user = await prisma.user.findUnique({
+      where: { firebaseUid: authUser!.uid },
+      select: { role: true },
+    })
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+    
+    if (user.role !== 'parent') {
+      return res.status(403).json({ error: 'Only parents can edit family details' })
+    }
+    
     const data = familySchema.partial().parse(req.body)
     const updated = await prisma.family.update({
       where: { id: req.params.id },

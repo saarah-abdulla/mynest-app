@@ -28,6 +28,10 @@ export function FamilyPage() {
   const [selectedCaregiver, setSelectedCaregiver] = useState<Caregiver | null>(null)
   const [sendingInvitation, setSendingInvitation] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<'parent' | 'caregiver' | null>(null)
+  const [editingFamily, setEditingFamily] = useState(false)
+  const [familyNameInput, setFamilyNameInput] = useState('')
+  const [regionInput, setRegionInput] = useState('')
+  const [timezoneInput, setTimezoneInput] = useState('')
 
   // Fetch user role
   useEffect(() => {
@@ -54,7 +58,17 @@ export function FamilyPage() {
   const isLoading = familiesLoading || childrenLoading || caregiversLoading
   const hasError = childrenError || caregiversError
 
-  const familyName = families[0]?.name || 'Your Family'
+  const family = families[0]
+  const familyName = family?.name || 'Your Family'
+
+  // Initialize form when editing
+  useEffect(() => {
+    if (editingFamily && family) {
+      setFamilyNameInput(family.name)
+      setRegionInput(family.region)
+      setTimezoneInput(family.timezone)
+    }
+  }, [editingFamily, family])
 
   const getAge = (birthdate: string) => {
     const today = new Date()
@@ -128,6 +142,39 @@ export function FamilyPage() {
     }
   }
 
+  const handleSaveFamily = async () => {
+    if (!family) return
+    
+    if (!familyNameInput.trim()) {
+      alert('Family name is required')
+      return
+    }
+    
+    try {
+      await api.updateFamily(family.id, {
+        name: familyNameInput.trim(),
+        region: regionInput.trim() || family.region,
+        timezone: timezoneInput.trim() || family.timezone,
+      })
+      setEditingFamily(false)
+      // Force page reload to refresh family data
+      window.location.reload()
+    } catch (error: any) {
+      console.error('Error updating family:', error)
+      const errorMessage = error?.message || error?.error || 'Failed to update family. Please try again.'
+      alert(errorMessage)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingFamily(false)
+    if (family) {
+      setFamilyNameInput(family.name)
+      setRegionInput(family.region)
+      setTimezoneInput(family.timezone)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -157,8 +204,93 @@ export function FamilyPage() {
       <div className="mx-auto max-w-7xl px-6 py-8">
         {/* Main Heading */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-brown mb-2">{familyName}</h1>
-          <p className="text-lg text-brown/70">Manage your family members and caregivers</p>
+          <div className="flex items-center justify-between mb-2">
+            {editingFamily ? (
+              <div className="flex-1 space-y-4">
+                <div>
+                  <label htmlFor="familyName" className="block text-sm font-semibold text-brown mb-2">
+                    Family Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="familyName"
+                    type="text"
+                    value={familyNameInput}
+                    onChange={(e) => setFamilyNameInput(e.target.value)}
+                    className="w-full max-w-md px-4 py-2 rounded-lg border border-brown/20 bg-card text-brown placeholder-brown/40 focus:outline-none focus:ring-2 focus:ring-sage focus:border-transparent text-2xl font-bold"
+                    placeholder="Family Name"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="region" className="block text-sm font-semibold text-brown mb-2">
+                    Region
+                  </label>
+                  <input
+                    id="region"
+                    type="text"
+                    value={regionInput}
+                    onChange={(e) => setRegionInput(e.target.value)}
+                    className="w-full max-w-md px-4 py-2 rounded-lg border border-brown/20 bg-card text-brown placeholder-brown/40 focus:outline-none focus:ring-2 focus:ring-sage focus:border-transparent"
+                    placeholder="e.g., Dubai, UAE"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="timezone" className="block text-sm font-semibold text-brown mb-2">
+                    Timezone
+                  </label>
+                  <input
+                    id="timezone"
+                    type="text"
+                    value={timezoneInput}
+                    onChange={(e) => setTimezoneInput(e.target.value)}
+                    className="w-full max-w-md px-4 py-2 rounded-lg border border-brown/20 bg-card text-brown placeholder-brown/40 focus:outline-none focus:ring-2 focus:ring-sage focus:border-transparent"
+                    placeholder="e.g., Asia/Dubai"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveFamily}
+                    className="px-4 py-2 rounded-lg bg-sage text-white font-semibold hover:bg-sage-dark transition-colors"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="px-4 py-2 rounded-lg border border-brown/20 text-brown font-semibold hover:bg-brown/5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h1 className="text-4xl font-bold text-brown mb-2">{familyName}</h1>
+                  <p className="text-lg text-brown/70">Manage your family members and caregivers</p>
+                  {family && (
+                    <p className="text-sm text-brown/60 mt-1">
+                      {family.region} • {family.timezone}
+                    </p>
+                  )}
+                </div>
+                {isParent && (
+                  <button
+                    onClick={() => setEditingFamily(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-brown/20 text-brown font-semibold hover:bg-brown/5 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    Edit Family
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Two Cards Side by Side */}
