@@ -317,12 +317,12 @@ async function sendViaSendGridAPI(data: {
       from: { email: extractEmail(data.from), name: data.from.match(/^"?([^<"]+)"?/)?.[1]?.trim() || 'MyNest' },
       content: [
         {
-          type: 'text/html',
-          value: data.html,
-        },
-        {
           type: 'text/plain',
           value: data.text,
+        },
+        {
+          type: 'text/html',
+          value: data.html,
         },
       ],
     }),
