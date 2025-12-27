@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { LoadingSpinner } from '../components/LoadingSpinner'
@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 export function InvitationPage() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { currentUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(false)
@@ -26,13 +27,25 @@ export function InvitationPage() {
         return
       }
 
+      // Check if error was passed from navigation state (e.g., from signup page)
+      const locationState = location.state as { error?: string } | null
+      if (locationState?.error) {
+        setError(locationState.error)
+        setLoading(false)
+        // Clear the state so it doesn't persist on refresh
+        window.history.replaceState({}, document.title)
+        return
+      }
+
       try {
         setLoading(true)
         setError(null)
         const data = await api.getInvitation(token)
         setInvitation(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load invitation')
+      } catch (err: any) {
+        // Check if error has details or message
+        const errorMessage = err?.details || err?.message || 'Failed to load invitation'
+        setError(errorMessage)
         console.error('Error fetching invitation:', err)
       } finally {
         setLoading(false)
@@ -40,7 +53,7 @@ export function InvitationPage() {
     }
 
     fetchInvitation()
-  }, [token])
+  }, [token, location.state])
 
   const handleAccept = async () => {
     if (!token || !currentUser) {

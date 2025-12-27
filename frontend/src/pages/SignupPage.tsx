@@ -69,6 +69,25 @@ export function SignupPage() {
         throw new Error('User account created but user ID not available')
       }
       
+      // Ensure we have an auth token before making API calls
+      // Import auth to get the current user and refresh token
+      const { auth } = await import('../lib/firebase')
+      let authUser = auth.currentUser
+      if (!authUser) {
+        // Wait a bit more and check again
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        authUser = auth.currentUser
+      }
+      
+      if (authUser) {
+        // Force token refresh to ensure we have a valid token
+        try {
+          await authUser.getIdToken(true) // Force refresh
+        } catch (tokenErr) {
+          console.error('Error refreshing auth token:', tokenErr)
+        }
+      }
+      
       // Check for pending invitation by email (even if no token in URL)
       let invitationToAccept = invitationToken
       if (!invitationToken) {
@@ -88,19 +107,17 @@ export function SignupPage() {
           // Redirect to dashboard for caregivers (they're now linked to a family)
           navigate('/dashboard', { replace: true })
           return
-        } catch (inviteErr) {
+        } catch (inviteErr: any) {
           console.error('Error accepting invitation:', inviteErr)
-          // If invitation acceptance fails, create basic user record and redirect to invitation page
-          try {
-            await api.createUser({
-              email: email,
-              displayName: email.split('@')[0],
-              role: 'parent',
-            })
-          } catch (userErr) {
-            console.log('User record creation failed:', userErr)
-          }
-          navigate(`/invite/${invitationToAccept}`, { replace: true })
+          // Show the error message to the user
+          const errorMessage = inviteErr?.details || inviteErr?.message || 'Failed to accept invitation'
+          
+          // If invitation acceptance fails, redirect to invitation page where they can try again
+          // The invitation page will show the error if the invitation is already used/expired
+          navigate(`/invite/${invitationToAccept}`, { 
+            replace: true,
+            state: { error: errorMessage }
+          })
           return
         }
       }
