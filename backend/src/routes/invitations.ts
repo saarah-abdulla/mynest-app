@@ -176,7 +176,16 @@ router.get(
     }
 
     if (invitation.status !== 'pending') {
-      return res.status(400).json({ error: 'Invitation already used or expired' })
+      const statusMessage = invitation.status === 'accepted' 
+        ? 'This invitation has already been accepted' 
+        : invitation.status === 'expired'
+        ? 'This invitation has expired'
+        : `Invitation status: ${invitation.status}`
+      return res.status(400).json({ 
+        error: 'Invitation already used or expired',
+        details: statusMessage,
+        status: invitation.status,
+      })
     }
 
     if (new Date() > invitation.expiresAt) {
@@ -185,7 +194,10 @@ router.get(
         where: { id: invitation.id },
         data: { status: 'expired' },
       })
-      return res.status(400).json({ error: 'Invitation has expired' })
+      return res.status(400).json({ 
+        error: 'Invitation has expired',
+        expiresAt: invitation.expiresAt.toISOString(),
+      })
     }
 
     res.json({
