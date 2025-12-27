@@ -72,6 +72,11 @@ app.use(
         return callback(null, true)
       }
       
+      // Allow Capacitor and Ionic origins (mobile apps)
+      if (origin.startsWith('capacitor://') || origin.startsWith('ionic://')) {
+        return callback(null, true)
+      }
+      
       if (allowOrigins.includes(origin)) {
         callback(null, true)
       } else {

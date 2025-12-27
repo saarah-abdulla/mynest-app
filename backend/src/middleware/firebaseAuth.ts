@@ -35,6 +35,11 @@ export function ensureFirebase() {
 }
 
 export async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
+  // Skip auth middleware for OPTIONS requests (CORS preflight)
+  if (req.method === 'OPTIONS') {
+    return next()
+  }
+  
   // If SKIP_AUTH is true, try to extract user info but don't require it
   const skipAuth = process.env.SKIP_AUTH === 'true'
   

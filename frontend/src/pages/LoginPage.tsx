@@ -29,11 +29,12 @@ export function LoginPage() {
     try {
       setLoading(true)
       console.log('[LoginPage] Attempting to sign in with email:', email)
-      await login(email, password)
+      const loginResult = await login(email, password)
+      console.log('[LoginPage] Login function completed, result:', loginResult)
       console.log('[LoginPage] Login successful, waiting for auth state...')
       
-      // Wait a moment for Firebase auth state to update
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Wait a moment for auth state to update (already set in login function)
+      await new Promise(resolve => setTimeout(resolve, 500))
       
       // If there's an invitation token, accept it automatically
       if (invitationToken) {
@@ -49,6 +50,7 @@ export function LoginPage() {
       
       console.log('[LoginPage] Navigating to dashboard...')
       navigate('/dashboard')
+      console.log('[LoginPage] Navigate called, should redirect now')
     } catch (err: any) {
       console.error('[LoginPage] Login error:', err)
       console.error('[LoginPage] Error details:', {

@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
@@ -15,7 +14,7 @@ import { auth } from '../lib/firebase'
 interface AuthContextType {
   currentUser: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<any>
   signup: (email: string, password: string, sendVerification?: boolean) => Promise<{ user: User }>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
@@ -100,28 +99,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthContext] Stored idToken in sessionStorage')
       }
       
-      // Now try to use the SDK method - it might work now that we have the token
-      // Or we can manually set auth state by forcing a refresh
-      try {
-        // Try the SDK method one more time - it might work now
-        const userCredential = await signInWithEmailAndPassword(auth, email, password)
-        console.log('[AuthContext] SDK login also succeeded')
-        return userCredential
-      } catch (sdkError) {
-        console.warn('[AuthContext] SDK login still failed, but REST API succeeded:', sdkError)
-        // Create a minimal user object for the response
-        // The API calls will use the token from sessionStorage
-        // Manually update auth state
-        const mockUser = {
-          email: data.email,
-          uid: data.localId,
-          getIdToken: async () => data.idToken,
-        } as any
-        setCurrentUser(mockUser)
-        return {
-          user: mockUser,
-        } as any
-      }
+      // Skip SDK method - it's stuck, so we'll use the REST API response directly
+      // Create a minimal user object for the response
+      // The API calls will use the token from sessionStorage
+      console.log('[AuthContext] Creating mock user object from REST API response')
+      const mockUser = {
+        email: data.email,
+        uid: data.localId,
+        getIdToken: async () => {
+          // Check if token is still in sessionStorage, if not, return the one we have
+          const storedToken = sessionStorage.getItem('firebase_id_token')
+          return storedToken || data.idToken
+        },
+        displayName: data.displayName || '',
+        emailVerified: data.emailVerified || false,
+      } as any
+      
+      // Manually update auth state
+      console.log('[AuthContext] Setting current user state...')
+      setCurrentUser(mockUser)
+      setLoading(false) // Stop loading since we have the user
+      
+      console.log('[AuthContext] Auth state updated with mock user, email:', data.email)
+      console.log('[AuthContext] Login function completing, returning user credential')
+      return {
+        user: mockUser,
+      } as any
     } catch (error: any) {
       console.error('[AuthContext] Login error:', error)
       throw error
