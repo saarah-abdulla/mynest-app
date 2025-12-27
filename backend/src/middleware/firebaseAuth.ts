@@ -11,12 +11,20 @@ export function ensureFirebase() {
 
   const projectId = process.env.FIREBASE_PROJECT_ID
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY
 
   if (!projectId || !clientEmail || !privateKey) {
     console.warn('[auth] Firebase credentials not set – skipping initialization')
     console.warn(`[auth] projectId: ${projectId ? 'set' : 'missing'}, clientEmail: ${clientEmail ? 'set' : 'missing'}, privateKey: ${privateKey ? 'set' : 'missing'}`)
     return
+  }
+
+  // Process private key: replace escaped newlines and trim whitespace
+  privateKey = privateKey.replace(/\\n/g, '\n').trim()
+
+  // Validate private key format
+  if (!privateKey.includes('BEGIN PRIVATE KEY') && !privateKey.includes('BEGIN RSA PRIVATE KEY')) {
+    console.warn('[auth] Firebase private key may be malformed (missing BEGIN marker)')
   }
 
   try {
@@ -29,8 +37,11 @@ export function ensureFirebase() {
     })
     firebaseInitialized = true
     console.log('[auth] Firebase Admin SDK initialized successfully')
-  } catch (error) {
-    console.error('[auth] Failed to initialize Firebase Admin SDK:', error)
+  } catch (error: any) {
+    console.error('[auth] Failed to initialize Firebase Admin SDK:', error?.message || error)
+    if (error?.code?.includes('credential') || error?.codePrefix === 'app') {
+      console.error('[auth] This is likely a credential formatting issue. Ensure FIREBASE_PRIVATE_KEY includes the full key with BEGIN/END markers.')
+    }
   }
 }
 

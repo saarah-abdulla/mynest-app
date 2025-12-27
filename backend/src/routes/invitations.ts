@@ -248,8 +248,14 @@ router.post(
     try {
       const firebaseUser = await admin.auth().getUser(authUser.uid)
       firebaseUserEmail = firebaseUser.email || null
-    } catch (err) {
-      console.error('Error fetching Firebase user:', err)
+    } catch (err: any) {
+      // Firebase Admin SDK error - likely credential issue, but we can still proceed
+      // The email will be validated against the invitation email below
+      if (err?.code?.includes('credential') || err?.codePrefix === 'app') {
+        console.warn('[invitations] Could not fetch Firebase user email (credential issue), using invitation email instead')
+      } else {
+        console.error('[invitations] Error fetching Firebase user:', err?.message || err)
+      }
       // If we can't get email from Firebase, we'll use the invitation email
       // but we need to verify the user exists in our DB first
     }
