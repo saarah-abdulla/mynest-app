@@ -288,6 +288,14 @@ router.post(
           error: `Email mismatch. Invitation is for ${invitation.email}, but your account email is ${user.email}` 
         })
       }
+      // Ensure the user role is set to caregiver (in case they were created as parent first)
+      // This will be updated again below, but set it here to ensure consistency
+      if (user.role !== 'caregiver') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'caregiver' },
+        })
+      }
     }
 
     // Check if caregiver is already linked to a user (invitation already accepted)
