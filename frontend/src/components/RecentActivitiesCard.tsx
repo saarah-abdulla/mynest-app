@@ -1,6 +1,6 @@
 import { useJournalEntries, useChildren } from '../hooks/useApiData'
 import { api } from '../lib/api'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { User } from '../types/entities'
 import { LoadingSpinner } from './LoadingSpinner'
 
@@ -9,6 +9,10 @@ export function RecentActivitiesCard() {
   const { children } = useChildren()
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
+  
+  // Store refetch in a ref so the event handler always uses the latest version
+  const refetchRef = useRef(refetch)
+  refetchRef.current = refetch
 
   // Fetch users to get author names
   useEffect(() => {
@@ -26,20 +30,17 @@ export function RecentActivitiesCard() {
   }, [])
 
   // Refetch entries when window gains focus (e.g., after logging an activity)
-  // Also refetch on mount to ensure we have the latest data when navigating to dashboard
+  // Note: Don't refetch on mount - the hook already fetches on mount
   useEffect(() => {
     const handleFocus = () => {
-      refetch()
+      refetchRef.current()
     }
-    
-    // Refetch immediately on mount
-    refetch()
     
     window.addEventListener('focus', handleFocus)
     return () => {
       window.removeEventListener('focus', handleFocus)
     }
-  }, [refetch])
+  }, []) // Empty deps - we only want to set up the listener once
 
   // Get the most recent 3 entries, sorted by updatedAt (or createdAt if updatedAt not available)
   const recentEntries = [...entries]

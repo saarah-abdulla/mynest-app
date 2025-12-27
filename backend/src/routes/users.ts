@@ -106,17 +106,29 @@ router.post(
       })
       
       if (existing) {
-        // Update existing user (especially familyId if provided)
+        // Update existing user, but don't overwrite familyId if user already has one
+        // This prevents users from accidentally changing families during profile setup
+        const updateData: any = {
+          email: data.email,
+          displayName: data.displayName,
+          role: data.role,
+          phone: data.phone,
+        }
+        
+        // Only update familyId if:
+        // 1. It's provided in the request AND
+        // 2. The user doesn't already have one (new user completing setup)
+        // This prevents overwriting existing familyId when updating profile info
+        if (data.familyId && !existing.familyId) {
+          updateData.familyId = data.familyId
+        } else if (!data.familyId && existing.familyId) {
+          // Keep existing familyId if not provided
+          updateData.familyId = existing.familyId
+        }
+        
         const updated = await prisma.user.update({
           where: { firebaseUid },
-          data: {
-            email: data.email,
-            displayName: data.displayName,
-            role: data.role,
-            phone: data.phone,
-            // Always update familyId if provided, even if user exists
-            familyId: data.familyId || existing.familyId,
-          },
+          data: updateData,
         })
         return res.json(updated)
       }
@@ -191,9 +203,19 @@ router.put(
     
     if (!user) return res.status(404).json({ error: 'User not found' })
     
+    // Protect against overwriting existing familyId unless explicitly intended
+    // Only update familyId if user doesn't already have one
+    const updateData = { ...data }
+    if ('familyId' in updateData && updateData.familyId && user.familyId) {
+      // User already has a familyId, don't overwrite it
+      // Remove familyId from update data to preserve existing value
+      delete updateData.familyId
+      console.log(`[users] PUT: User ${user.id} already has familyId ${user.familyId}, preserving it`)
+    }
+    
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data,
+      data: updateData,
     })
     res.json(updated)
   }),
