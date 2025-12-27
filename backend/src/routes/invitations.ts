@@ -243,39 +243,43 @@ router.post(
       return res.status(400).json({ error: 'Invitation has expired' })
     }
 
-    // Get Firebase user info to get email
-    let firebaseUserEmail: string | null = null
-    try {
-      const firebaseUser = await admin.auth().getUser(authUser.uid)
-      firebaseUserEmail = firebaseUser.email || null
-    } catch (err: any) {
-      // Firebase Admin SDK error - likely credential issue, but we can still proceed
-      // The email will be validated against the invitation email below
-      if (err?.code?.includes('credential') || err?.codePrefix === 'app') {
-        console.warn('[invitations] Could not fetch Firebase user email (credential issue), using invitation email instead')
-      } else {
-        console.error('[invitations] Error fetching Firebase user:', err?.message || err)
-      }
-      // If we can't get email from Firebase, we'll use the invitation email
-      // but we need to verify the user exists in our DB first
-    }
-
-    // Find or create user record
+    // Find existing user record first (if they already have an account)
     let user = await prisma.user.findUnique({
       where: { firebaseUid: authUser.uid },
     })
 
+    // Try to get email - prefer database user email, fallback to Firebase, then invitation email
+    let userEmail: string
+    if (user) {
+      // User already exists - use their database email
+      userEmail = user.email
+    } else {
+      // New user - try to get email from Firebase Admin SDK, fallback to invitation email
+      let firebaseUserEmail: string | null = null
+      try {
+        const firebaseUser = await admin.auth().getUser(authUser.uid)
+        firebaseUserEmail = firebaseUser.email || null
+      } catch (err: any) {
+        // Firebase Admin SDK error - likely credential issue, but we can still proceed
+        // We'll use the invitation email as fallback
+        if (err?.code?.includes('credential') || err?.codePrefix === 'app') {
+          console.warn('[invitations] Could not fetch Firebase user email (credential issue), using invitation email instead')
+        } else {
+          console.error('[invitations] Error fetching Firebase user:', err?.message || err)
+        }
+      }
+      userEmail = firebaseUserEmail || invitation.email
+    }
+
+    // Verify email matches invitation
+    if (userEmail.toLowerCase() !== invitation.email.toLowerCase()) {
+      return res.status(400).json({ 
+        error: `Email mismatch. Invitation is for ${invitation.email}, but your account email is ${userEmail}` 
+      })
+    }
+
     if (!user) {
       // User record doesn't exist, create it
-      // Use Firebase email if available, otherwise use invitation email
-      const userEmail = firebaseUserEmail || invitation.email
-
-      // Verify email matches invitation
-      if (userEmail.toLowerCase() !== invitation.email.toLowerCase()) {
-        return res.status(400).json({ 
-          error: `Email mismatch. Invitation is for ${invitation.email}, but your account email is ${userEmail}` 
-        })
-      }
 
       // Create user record
       user = await prisma.user.create({
