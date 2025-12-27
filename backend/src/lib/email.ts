@@ -104,21 +104,22 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
               text-align: center;
               margin-bottom: 30px;
             }
+            .logo-container {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .logo-img {
+              width: 48px;
+              height: 48px;
+              display: block;
+              margin: 0 auto 12px auto;
+            }
             h1 {
               color: #795548;
               font-size: 28px;
               font-weight: bold;
               margin-bottom: 20px;
               text-align: center;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 12px;
-            }
-            .logo-img {
-              width: 48px;
-              height: 48px;
-              vertical-align: middle;
             }
             .content {
               color: #795548;
@@ -157,10 +158,10 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
         </head>
         <body>
           <div class="container">
-            <h1>
+            <div class="logo-container">
               <img src="${process.env.FRONTEND_URL || 'https://mynest-app.vercel.app'}/mynest-logo.png" alt="MyNest" class="logo-img" />
-              You've been invited!
-            </h1>
+            </div>
+            <h1>You've been invited!</h1>
             <div class="content">
               <p>Hi ${caregiverName},</p>
               <p>
