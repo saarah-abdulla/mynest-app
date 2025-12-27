@@ -272,6 +272,17 @@ router.post(
 
     // Now check invitation status (but only if not already linked)
     if (invitation.status !== 'pending') {
+      // Log detailed info for debugging
+      console.log('[invitations] Invitation status check failed:', {
+        token,
+        status: invitation.status,
+        caregiverId: invitation.caregiverId,
+        caregiverUserId: caregiver?.userId,
+        userExists: !!user,
+        userId: user?.id,
+        expiresAt: invitation.expiresAt,
+      })
+      
       const statusMessage = invitation.status === 'accepted' 
         ? 'This invitation has already been accepted by another user'
         : invitation.status === 'expired'
