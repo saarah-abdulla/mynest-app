@@ -231,22 +231,58 @@ router.post(
       return res.status(404).json({ error: 'Invitation not found' })
     }
 
-    if (invitation.status !== 'pending') {
-      return res.status(400).json({ error: 'Invitation already used or expired' })
-    }
-
+    // Check expiration first
     if (new Date() > invitation.expiresAt) {
       await prisma.invitation.update({
         where: { id: invitation.id },
         data: { status: 'expired' },
       })
-      return res.status(400).json({ error: 'Invitation has expired' })
+      return res.status(400).json({ 
+        error: 'Invitation has expired',
+        expiresAt: invitation.expiresAt.toISOString(),
+      })
     }
 
     // Find existing user record first (if they already have an account)
     let user = await prisma.user.findUnique({
       where: { firebaseUid: authUser.uid },
     })
+
+    // Check if caregiver is already linked to this user (idempotency check)
+    // This allows re-accepting if already linked, even if status is 'accepted'
+    const caregiver = await prisma.caregiver.findUnique({
+      where: { id: invitation.caregiverId },
+    })
+
+    if (caregiver && caregiver.userId === user?.id) {
+      // User is already linked to this caregiver - invitation was already accepted
+      // Mark invitation as accepted if it's still pending (idempotency)
+      if (invitation.status === 'pending') {
+        await prisma.invitation.update({
+          where: { id: invitation.id },
+          data: { status: 'accepted' },
+        })
+      }
+      return res.json({
+        message: 'Invitation already linked successfully',
+        caregiverId: invitation.caregiverId,
+        familyId: invitation.familyId,
+      })
+    }
+
+    // Now check invitation status (but only if not already linked)
+    if (invitation.status !== 'pending') {
+      const statusMessage = invitation.status === 'accepted' 
+        ? 'This invitation has already been accepted by another user'
+        : invitation.status === 'expired'
+        ? 'This invitation has expired'
+        : `Invitation status: ${invitation.status}`
+      return res.status(400).json({ 
+        error: 'Invitation already used or expired',
+        details: statusMessage,
+        status: invitation.status,
+      })
+    }
 
     // Try to get email - prefer database user email, fallback to Firebase, then invitation email
     let userEmail: string
@@ -308,11 +344,7 @@ router.post(
       }
     }
 
-    // Check if caregiver is already linked to a user (invitation already accepted)
-    const caregiver = await prisma.caregiver.findUnique({
-      where: { id: invitation.caregiverId },
-    })
-
+    // Caregiver was already fetched above, verify it exists
     if (!caregiver) {
       return res.status(404).json({ error: 'Caregiver not found' })
     }
@@ -322,22 +354,6 @@ router.post(
       return res.status(400).json({ 
         error: 'This invitation has already been accepted by another user',
         details: 'This caregiver account is already linked to a different user',
-      })
-    }
-
-    if (caregiver.userId === user.id) {
-      // User is already linked to this caregiver - invitation was already accepted
-      // Mark invitation as accepted if it's still pending (idempotency)
-      if (invitation.status === 'pending') {
-        await prisma.invitation.update({
-          where: { id: invitation.id },
-          data: { status: 'accepted' },
-        })
-      }
-      return res.json({
-        message: 'Invitation already linked successfully',
-        caregiverId: invitation.caregiverId,
-        familyId: invitation.familyId,
       })
     }
 
