@@ -40,6 +40,9 @@
    VITE_FIREBASE_STORAGE_BUCKET=mynest-ae.appspot.com
    VITE_FIREBASE_MESSAGING_SENDER_ID=123456789 (your actual sender ID)
    VITE_FIREBASE_APP_ID=1:123456789:web:abc123 (your actual app ID)
+   
+   # Optional: Firebase Analytics (for tracking user events)
+   VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX (your Measurement ID, starts with G-)
    ```
 
 ### Step 4: Verify Setup

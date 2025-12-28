@@ -8,13 +8,35 @@ Firebase Analytics has been enabled in the frontend application. This document d
 
 To enable Firebase Analytics, add the following environment variable:
 
+### For Local Development
+
+Create or update `.env` file in the `frontend/` directory:
+
 ```env
 VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
+### For Production (Vercel)
+
+Add the environment variable in Vercel Dashboard:
+1. Go to your Vercel project → Settings → Environment Variables
+2. Click "Add New"
+3. Key: `VITE_FIREBASE_MEASUREMENT_ID`
+4. Value: `G-XXXXXXXXXX` (your Measurement ID)
+5. Select environment: Production (and Preview/Development if desired)
+6. Click "Save"
+7. **Important**: Redeploy your app after adding the variable
+
+### How to Find Your Measurement ID
+
 You can find your Measurement ID in the Firebase Console:
 1. Go to Firebase Console → Project Settings
 2. Under "Your apps", select your web app
+3. Find the "Measurement ID" (starts with `G-`)
+
+Or:
+1. Go to Firebase Console → Analytics → Data Streams
+2. Select your web stream
 3. Find the "Measurement ID" (starts with `G-`)
 
 **Note:** Analytics will gracefully degrade if this variable is not set - the app will continue to work normally, but analytics events won't be tracked.

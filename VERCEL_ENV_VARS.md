@@ -42,6 +42,18 @@ Get these from Firebase Console → Project Settings → Your apps → Web app c
 **Variable**: `VITE_FIREBASE_APP_ID`  
 **Value**: `1:123456789:web:abcdef` (your app ID)
 
+### 3. Firebase Analytics (Optional)
+
+**Variable**: `VITE_FIREBASE_MEASUREMENT_ID`  
+**Value**: `G-XXXXXXXXXX` (your Measurement ID)  
+**Note**: This is optional - Analytics will work without it, but won't be initialized.
+
+**How to get it:**
+1. Go to Firebase Console → Project Settings
+2. Under "Your apps", select your web app
+3. Find the "Measurement ID" (starts with `G-`)
+4. Or go to Firebase Console → Analytics → Data Streams → Your web stream → Measurement ID
+
 ## How to Add to Vercel
 
 ### Step 1: Open Vercel Dashboard
@@ -143,6 +155,7 @@ After adding variables and redeploying:
 - [ ] `VITE_FIREBASE_STORAGE_BUCKET` - From Firebase Console
 - [ ] `VITE_FIREBASE_MESSAGING_SENDER_ID` - From Firebase Console
 - [ ] `VITE_FIREBASE_APP_ID` - From Firebase Console
+- [ ] `VITE_FIREBASE_MEASUREMENT_ID` - From Firebase Console (optional, for Analytics)
 - [ ] Redeployed after adding variables
 - [ ] Tested sign up/login
 
