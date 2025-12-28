@@ -130,6 +130,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false) // Stop loading since we have the user
       
       console.log('[AuthContext] Auth state updated with mock user, email:', data.email)
+      
+      // Track login event (no personal data logged)
+      try {
+        const { trackEvent } = await import('../lib/analytics')
+        trackEvent('login', { method: 'email' })
+      } catch (error) {
+        // Analytics is optional, don't fail login if it fails
+        console.warn('Failed to track login event:', error)
+      }
+      
       console.log('[AuthContext] Login function completing, returning user credential')
       return {
         user: mockUser,
