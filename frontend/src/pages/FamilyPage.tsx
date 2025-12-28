@@ -133,13 +133,13 @@ export function FamilyPage() {
       setSendingInvitation(caregiverId)
       await api.sendInvitation(caregiverId)
       
-      // Track invitation sent event (no personal data logged)
+      // Track invitation resend event (no personal data logged)
       try {
         const { trackEvent } = await import('../lib/analytics')
-        trackEvent('invite_sent')
+        trackEvent('invite_caregiver', { action: 'resend' })
       } catch (error) {
         // Analytics is optional, don't fail if it fails
-        console.warn('Failed to track invite_sent event:', error)
+        console.warn('Failed to track invite_caregiver event:', error)
       }
       
       alert('Invitation email sent successfully!')

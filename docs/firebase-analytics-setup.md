@@ -89,8 +89,9 @@ The following events are tracked throughout the application:
 
 1. **`sign_up`**
    - Location: `frontend/src/contexts/AuthContext.tsx` → `signup()` function
-   - Parameters: `{ method: 'email' }`
+   - Parameters: `{ method: 'email', source: 'invite' | 'organic' }`
    - Triggered when a user signs up with email
+   - `source: 'invite'` if user came through invitation flow, `source: 'organic'` otherwise
 
 2. **`login`**
    - Location: `frontend/src/contexts/AuthContext.tsx` → `login()` and `loginWithGoogle()` functions
@@ -108,18 +109,23 @@ The following events are tracked throughout the application:
    - Triggered when a new child is added (not on updates)
    - Only tracks creation, not edits
 
+4. **`add_event`**
+   - Location: `frontend/src/components/EventFormModal.tsx` → `handleSubmit()` function
+   - Triggered when a new calendar/activity event is created (not on updates)
+   - Only tracks creation, not edits
+
 ### Invitation Events
 
-5. **`invite_sent`**
-   - Location: `frontend/src/pages/FamilyPage.tsx` → `handleResendInvitation()` function
-   - Triggered when an invitation email is sent to a caregiver
+5. **`invite_caregiver`**
+   - Locations:
+     - `frontend/src/components/CaregiverFormModal.tsx` → `handleSubmit()` function (when creating new caregiver with email)
+     - `frontend/src/pages/FamilyPage.tsx` → `handleResendInvitation()` function
+   - Parameters: `{ action: "send" | "resend" }`
+   - Triggered when an invitation email is sent to a caregiver (initial send or resend)
 
 6. **`invite_accepted`**
-   - Locations:
-     - `frontend/src/pages/InvitationPage.tsx` → `handleAccept()` function
-     - `frontend/src/pages/SignupPage.tsx` → after `acceptInvitation()` success
-     - `frontend/src/pages/LoginPage.tsx` → after `acceptInvitation()` success
-   - Triggered when a caregiver accepts an invitation
+   - Location: `frontend/src/pages/InvitationPage.tsx` → `handleAccept()` function
+   - Triggered when a caregiver accepts an invitation (tracked only once, in the main acceptance handler to prevent duplicates)
 
 ### Dashboard Events
 

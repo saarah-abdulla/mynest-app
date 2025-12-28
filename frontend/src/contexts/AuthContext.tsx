@@ -15,7 +15,7 @@ interface AuthContextType {
   currentUser: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<any>
-  signup: (email: string, password: string, sendVerification?: boolean) => Promise<{ user: User }>
+  signup: (email: string, password: string, sendVerification?: boolean, source?: 'invite' | 'organic') => Promise<{ user: User }>
   loginWithGoogle: () => Promise<any>
   logout: () => Promise<void>
 }
@@ -34,13 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  async function signup(email: string, password: string, sendVerification: boolean = true) {
+  async function signup(email: string, password: string, sendVerification: boolean = true, source: 'invite' | 'organic' = 'organic') {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     
     // Track signup event (no personal data logged)
     try {
       const { trackEvent } = await import('../lib/analytics')
-      trackEvent('sign_up', { method: 'email' })
+      trackEvent('sign_up', { method: 'email', source })
     } catch (error) {
       // Analytics is optional, don't fail signup if it fails
       console.warn('Failed to track signup event:', error)

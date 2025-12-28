@@ -105,6 +105,15 @@ export function EventFormModal({
         await api.updateSchedule(event.id, data)
       } else {
         await api.createSchedule(data)
+        
+        // Track event creation (no personal data logged)
+        try {
+          const { trackEvent } = await import('../lib/analytics')
+          trackEvent('add_event')
+        } catch (error) {
+          // Analytics is optional, don't fail if it fails
+          console.warn('Failed to track add_event:', error)
+        }
       }
 
       onSuccess()

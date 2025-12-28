@@ -98,6 +98,18 @@ export function CaregiverFormModal({
         await api.updateCaregiver(caregiver.id, data)
       } else {
         await api.createCaregiver(data)
+        
+        // Track invitation sent event for new caregivers with email (backend sends invite automatically)
+        // Only track if email is provided (backend only sends invite if email exists)
+        if (email && email.trim()) {
+          try {
+            const { trackEvent } = await import('../lib/analytics')
+            trackEvent('invite_caregiver', { action: 'send' })
+          } catch (error) {
+            // Analytics is optional, don't fail if it fails
+            console.warn('Failed to track invite_caregiver event:', error)
+          }
+        }
       }
 
       onSuccess()

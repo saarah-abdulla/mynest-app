@@ -68,6 +68,7 @@ export function InvitationPage() {
       await api.acceptInvitation(token)
       
       // Track invitation accepted event (no personal data logged)
+      // Only track here - this is the main acceptance handler to prevent duplicates
       try {
         const { trackEvent } = await import('../lib/analytics')
         trackEvent('invite_accepted')
