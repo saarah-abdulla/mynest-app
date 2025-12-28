@@ -22,6 +22,17 @@ export function DashboardPage() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
   const { families, loading: familiesLoading } = useFamilies()
+  
+  // Track dashboard view (runs once on mount)
+  useEffect(() => {
+    // Dynamically import to avoid issues if analytics is unavailable
+    import('../lib/analytics').then(({ trackEvent }) => {
+      trackEvent('view_dashboard')
+    }).catch((error) => {
+      // Analytics is optional, don't fail if it fails
+      console.warn('Failed to track view_dashboard event:', error)
+    })
+  }, [])
   const { children, loading: childrenLoading, error: childrenError, refetch: refetchChildren } =
     useChildren()
   const {

@@ -16,7 +16,7 @@ interface AuthContextType {
   loading: boolean
   login: (email: string, password: string) => Promise<any>
   signup: (email: string, password: string, sendVerification?: boolean) => Promise<{ user: User }>
-  loginWithGoogle: () => Promise<void>
+  loginWithGoogle: () => Promise<any>
   logout: () => Promise<void>
 }
 
@@ -36,6 +36,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signup(email: string, password: string, sendVerification: boolean = true) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    
+    // Track signup event (no personal data logged)
+    try {
+      const { trackEvent } = await import('../lib/analytics')
+      trackEvent('sign_up', { method: 'email' })
+    } catch (error) {
+      // Analytics is optional, don't fail signup if it fails
+      console.warn('Failed to track signup event:', error)
+    }
     
     // Send verification email if requested
     if (sendVerification && userCredential.user) {
@@ -131,11 +140,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  function loginWithGoogle() {
+  async function loginWithGoogle() {
     const provider = new GoogleAuthProvider()
-    return signInWithPopup(auth, provider).then(() => {
-      // User login handled by onAuthStateChanged
-    })
+    const result = await signInWithPopup(auth, provider)
+    
+    // Track login event (no personal data logged)
+    try {
+      const { trackEvent } = await import('../lib/analytics')
+      trackEvent('login', { method: 'google' })
+    } catch (error) {
+      // Analytics is optional, don't fail login if it fails
+      console.warn('Failed to track login event:', error)
+    }
+    
+    // User login handled by onAuthStateChanged
+    return result
   }
 
   function logout() {

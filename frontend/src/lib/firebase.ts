@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
+import { getAnalytics, type Analytics, isSupported } from 'firebase/analytics'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -59,6 +60,40 @@ try {
 // The authDomain should be the Firebase project domain, not a custom URL scheme
 export const auth = getAuth(app)
 console.log('✅ Firebase Auth initialized successfully')
+
+/**
+ * Firebase Analytics Initialization (browser-only)
+ * 
+ * Analytics is only initialized in browser environment to avoid SSR issues.
+ * The measurement ID is optional - if not provided, analytics will simply not be initialized.
+ */
+let analytics: Analytics | null = null
+
+if (typeof window !== 'undefined') {
+  // Only initialize analytics in browser
+  const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  if (measurementId) {
+    isSupported().then((supported) => {
+      if (supported) {
+        try {
+          analytics = getAnalytics(app)
+          console.log('✅ Firebase Analytics initialized successfully')
+        } catch (error) {
+          console.warn('⚠️ Firebase Analytics initialization failed:', error)
+        }
+      } else {
+        console.warn('⚠️ Firebase Analytics is not supported in this environment')
+      }
+    }).catch((error) => {
+      console.warn('⚠️ Firebase Analytics support check failed:', error)
+    })
+  } else {
+    console.log('ℹ️ VITE_FIREBASE_MEASUREMENT_ID is not set - Analytics will not be initialized')
+    console.log('   To enable Analytics, add VITE_FIREBASE_MEASUREMENT_ID to your .env file')
+  }
+}
+
+export { analytics }
 export default app
 
 

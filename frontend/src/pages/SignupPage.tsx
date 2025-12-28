@@ -104,6 +104,16 @@ export function SignupPage() {
       if (invitationToAccept) {
         try {
           await api.acceptInvitation(invitationToAccept)
+          
+          // Track invitation accepted event (no personal data logged)
+          try {
+            const { trackEvent } = await import('../lib/analytics')
+            trackEvent('invite_accepted')
+          } catch (error) {
+            // Analytics is optional, don't fail if it fails
+            console.warn('Failed to track invite_accepted event:', error)
+          }
+          
           // Redirect to dashboard for caregivers (they're now linked to a family)
           navigate('/dashboard', { replace: true })
           return

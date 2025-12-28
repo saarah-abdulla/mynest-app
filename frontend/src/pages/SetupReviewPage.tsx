@@ -37,6 +37,15 @@ export function SetupReviewPage() {
         timezone: 'Asia/Dubai',
       })
 
+      // Track family creation event (no personal data logged)
+      try {
+        const { trackEvent } = await import('../lib/analytics')
+        trackEvent('create_family')
+      } catch (error) {
+        // Analytics is optional, don't fail if it fails
+        console.warn('Failed to track create_family event:', error)
+      }
+
       // Create or update user record with familyId
       // POST will handle both create and update
       try {

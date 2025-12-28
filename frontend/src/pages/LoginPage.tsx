@@ -41,6 +41,16 @@ export function LoginPage() {
         try {
           console.log('[LoginPage] Accepting invitation token:', invitationToken)
           await api.acceptInvitation(invitationToken)
+          
+          // Track invitation accepted event (no personal data logged)
+          try {
+            const { trackEvent } = await import('../lib/analytics')
+            trackEvent('invite_accepted')
+          } catch (error) {
+            // Analytics is optional, don't fail if it fails
+            console.warn('Failed to track invite_accepted event:', error)
+          }
+          
           console.log('[LoginPage] Invitation accepted successfully')
         } catch (inviteErr) {
           console.error('[LoginPage] Error accepting invitation:', inviteErr)

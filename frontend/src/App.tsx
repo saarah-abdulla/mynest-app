@@ -19,6 +19,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAuth } from './contexts/AuthContext'
 import { LoadingSpinner } from './components/LoadingSpinner'
+import { PageViewTracker } from './components/PageViewTracker'
 
 function App() {
   const { loading } = useAuth()
@@ -32,7 +33,9 @@ function App() {
   }
 
   return (
-    <Routes>
+    <>
+      <PageViewTracker />
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -120,6 +123,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   )
 }
 

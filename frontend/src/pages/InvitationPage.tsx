@@ -66,6 +66,16 @@ export function InvitationPage() {
       setAccepting(true)
       setError(null)
       await api.acceptInvitation(token)
+      
+      // Track invitation accepted event (no personal data logged)
+      try {
+        const { trackEvent } = await import('../lib/analytics')
+        trackEvent('invite_accepted')
+      } catch (error) {
+        // Analytics is optional, don't fail if it fails
+        console.warn('Failed to track invite_accepted event:', error)
+      }
+      
       // Redirect to dashboard
       navigate('/dashboard')
     } catch (err) {

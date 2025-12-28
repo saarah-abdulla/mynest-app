@@ -71,6 +71,15 @@ export function ChildFormModal({ isOpen, onClose, child, onSuccess }: ChildFormM
         await api.updateChild(child.id, data)
       } else {
         await api.createChild(data)
+        
+        // Track child creation event (no personal data logged)
+        try {
+          const { trackEvent } = await import('../lib/analytics')
+          trackEvent('add_child')
+        } catch (error) {
+          // Analytics is optional, don't fail if it fails
+          console.warn('Failed to track add_child event:', error)
+        }
       }
 
       onSuccess()
