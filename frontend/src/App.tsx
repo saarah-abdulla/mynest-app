@@ -20,6 +20,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { useAuth } from './contexts/AuthContext'
 import { LoadingSpinner } from './components/LoadingSpinner'
 import { PageViewTracker } from './components/PageViewTracker'
+import { DebugAnalytics } from './components/DebugAnalytics'
 
 function App() {
   const { loading } = useAuth()
@@ -35,6 +36,7 @@ function App() {
   return (
     <>
       <PageViewTracker />
+      <DebugAnalytics />
       <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
