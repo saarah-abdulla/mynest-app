@@ -6,9 +6,10 @@ import { ErrorMessage } from '../components/ErrorMessage'
 import { ChildFormModal } from '../components/ChildFormModal'
 import { CaregiverFormModal } from '../components/CaregiverFormModal'
 import { InviteParentModal } from '../components/InviteParentModal'
+import { api } from '../lib/api'
 import { formatDateDDMMYYYY } from '../lib/dateUtils'
 import { useAuth } from '../contexts/AuthContext'
-import type { Child, Caregiver, User } from '../types/entities'
+import type { Child, Caregiver } from '../types/entities'
 
 export function FamilyPage() {
   const { currentUser } = useAuth()
