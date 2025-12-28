@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../lib/api'
-import type { Child, ScheduleEntry, JournalEntry, Caregiver, Family } from '../types/entities'
+import type { Child, ScheduleEntry, JournalEntry, Caregiver, Family, User } from '../types/entities'
 
 export function useChildren() {
   const [children, setChildren] = useState<Child[]>([])
