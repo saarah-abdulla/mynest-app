@@ -132,3 +132,29 @@ export function useFamilies() {
   return { families, loading, error }
 }
 
+export function useUsers() {
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await api.listUsers()
+      setUsers(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users')
+      console.error('Error fetching users:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  return { users, loading, error, refetch: fetchUsers }
+}
+

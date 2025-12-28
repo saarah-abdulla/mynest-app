@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { NavigationBar } from '../components/NavigationBar'
-import { useChildren, useCaregivers, useFamilies } from '../hooks/useApiData'
+import { useChildren, useCaregivers, useFamilies, useUsers } from '../hooks/useApiData'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { ChildFormModal } from '../components/ChildFormModal'
 import { CaregiverFormModal } from '../components/CaregiverFormModal'
 import { InviteParentModal } from '../components/InviteParentModal'
-import { api } from '../lib/api'
 import { formatDateDDMMYYYY } from '../lib/dateUtils'
 import { useAuth } from '../contexts/AuthContext'
 import type { Child, Caregiver, User } from '../types/entities'
@@ -22,6 +21,7 @@ export function FamilyPage() {
     error: caregiversError,
     refetch: refetchCaregivers,
   } = useCaregivers()
+  const { users, loading: usersLoading, error: usersError, refetch: refetchUsers } = useUsers()
 
   const [childModalOpen, setChildModalOpen] = useState(false)
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
@@ -34,53 +34,32 @@ export function FamilyPage() {
   const [familyNameInput, setFamilyNameInput] = useState('')
   const [regionInput, setRegionInput] = useState('')
   const [timezoneInput, setTimezoneInput] = useState('')
-  const [parents, setParents] = useState<User[]>([])
-  const [loadingParents, setLoadingParents] = useState(false)
 
-  // Fetch user role and parents list
-  const fetchUsers = async () => {
-    if (!currentUser) return
-    try {
-      setLoadingParents(true)
-      const users = await api.listUsers()
+  // Filter parents from users and set user role
+  const parents = users.filter((u) => u.role === 'parent')
+  
+  useEffect(() => {
+    if (currentUser && users.length > 0) {
       const currentUserData = users.find((u) => u.email === currentUser.email)
       if (currentUserData) {
         setUserRole(currentUserData.role)
       } else {
         setUserRole('parent') // Default to parent if not found
       }
-      // Filter to only show parents (users with role='parent')
-      const parentsList = users.filter((u) => u.role === 'parent')
-      setParents(parentsList)
-    } catch (err) {
-      console.error('Error fetching users:', err)
-      setUserRole('parent')
-      setParents([])
-    } finally {
-      setLoadingParents(false)
     }
-  }
+  }, [currentUser, users])
 
+  // Refetch users when caregiver or parent modal closes (similar to caregivers pattern)
   useEffect(() => {
-    fetchUsers()
-  }, [currentUser, caregiverModalOpen, inviteParentModalOpen])
-
-  // Refetch parents when window gains focus (e.g., when returning from accepting an invitation)
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchUsers()
+    if (!caregiverModalOpen && !inviteParentModalOpen) {
+      refetchUsers()
     }
-    
-    window.addEventListener('focus', handleFocus)
-    return () => {
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [currentUser])
+  }, [caregiverModalOpen, inviteParentModalOpen, refetchUsers])
 
   const isParent = userRole === 'parent'
 
-  const isLoading = familiesLoading || childrenLoading || caregiversLoading
-  const hasError = childrenError || caregiversError
+  const isLoading = familiesLoading || childrenLoading || caregiversLoading || usersLoading
+  const hasError = childrenError || caregiversError || usersError
 
   const family = families[0]
   const familyName = family?.name || 'Your Family'
@@ -466,7 +445,7 @@ export function FamilyPage() {
               )}
             </div>
 
-            {loadingParents ? (
+            {usersLoading ? (
               <div className="text-center py-8">
                 <LoadingSpinner />
               </div>
@@ -704,7 +683,7 @@ export function FamilyPage() {
           familyId={family.id}
           onSuccess={() => {
             // Refetch users to update parents list (invitation sent, but parent won't appear until they accept)
-            fetchUsers()
+            refetchUsers()
           }}
         />
       )}
