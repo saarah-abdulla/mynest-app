@@ -10,17 +10,25 @@
 - ❌ Email verification (unless enabled in Firebase)
 - ❌ Password reset emails (unless enabled in Firebase)
 
-## Firebase Email Verification (Optional)
+## Firebase Email Verification
 
-Firebase can send email verification emails, but it needs to be:
-1. Enabled in Firebase Console
-2. Triggered in your code (currently not implemented)
+Firebase sends email verification emails automatically when `sendEmailVerification()` is called (which happens during signup).
 
-### Enable Email Verification in Firebase
+**Note:** Verification emails come from Firebase's sender address (e.g., `noreply@firebaseapp.com`) - this cannot be changed, but you can customize the email content and branding.
 
-1. Go to Firebase Console → Authentication → Settings
-2. Under "Authorized domains", make sure your domain is listed
-3. Under "Email templates", you can customize the verification email
+### Customize Email Templates in Firebase Console
+
+1. Go to [Firebase Console](https://console.firebase.google.com/project/mynest-ae/authentication/emails)
+2. Click on **Templates** tab
+3. Select **Email address verification** template
+4. Customize:
+   - **Email subject**: e.g., "Verify your MyNest account"
+   - **Email content**: HTML template with your branding
+   - **Action URL**: Should point to your frontend (e.g., `https://mynest.ae/verify-email?mode=action&oobCode=%LINK%`)
+
+**Important:** The sender address will still be Firebase's - you can customize the content and branding, but not the sender address.
+
+See `docs/firebase-verification-email-customization.md` for more details.
 
 ### Add Email Verification to Signup (Optional)
 
