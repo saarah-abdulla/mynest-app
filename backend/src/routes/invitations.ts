@@ -386,13 +386,14 @@ router.post(
       return res.status(400).json({ error: 'Invalid invitation: caregiver invitation must have caregiverId' })
     }
 
-    // Check if caregiver is already linked to this user (idempotency check)
+    // Check if caregiver is already linked to this user (idempotency check - do this BEFORE status check)
     const caregiver = await prisma.caregiver.findUnique({
       where: { id: caregiverId },
     })
 
     if (caregiver && caregiver.userId === user?.id) {
       // User is already linked to this caregiver - invitation was already accepted
+      // Mark invitation as accepted if it's still pending (idempotency)
       if (invitation.status === 'pending') {
         await prisma.invitation.update({
           where: { id: invitation.id },
@@ -403,6 +404,20 @@ router.post(
         message: 'Invitation already linked successfully',
         caregiverId: caregiverId,
         familyId: invitation.familyId,
+      })
+    }
+
+    // Now check invitation status (but only if idempotency check didn't pass)
+    if (invitation.status !== 'pending') {
+      const statusMessage = invitation.status === 'accepted' 
+        ? 'This invitation has already been accepted'
+        : invitation.status === 'expired'
+        ? 'This invitation has expired'
+        : `Invitation status: ${invitation.status}`
+      return res.status(400).json({ 
+        error: 'Invitation already used or expired',
+        details: statusMessage,
+        status: invitation.status,
       })
     }
 
