@@ -266,20 +266,6 @@ router.post(
       })
     }
 
-    // Check invitation status
-    if (invitation.status !== 'pending') {
-      const statusMessage = invitation.status === 'accepted' 
-        ? 'This invitation has already been accepted'
-        : invitation.status === 'expired'
-        ? 'This invitation has expired'
-        : `Invitation status: ${invitation.status}`
-      return res.status(400).json({ 
-        error: 'Invitation already used or expired',
-        details: statusMessage,
-        status: invitation.status,
-      })
-    }
-
     // Determine invitation type (default to 'caregiver' for backward compatibility)
     const invitationType = (invitation as any).invitationType || 'caregiver'
 
@@ -317,9 +303,10 @@ router.post(
 
     // Handle parent invitations
     if (invitationType === 'parent') {
-      // Check if user is already a parent in this family (idempotency check)
+      // Check if user is already a parent in this family (idempotency check - do this BEFORE status check)
       if (user && user.familyId === invitation.familyId && user.role === 'parent') {
         // User is already a parent in this family - invitation was already accepted
+        // Mark invitation as accepted if it's still pending (idempotency)
         if (invitation.status === 'pending') {
           await prisma.invitation.update({
             where: { id: invitation.id },
@@ -329,6 +316,20 @@ router.post(
         return res.json({
           message: 'Invitation already accepted - you are already a parent in this family',
           familyId: invitation.familyId,
+        })
+      }
+
+      // Now check invitation status (but only if idempotency check didn't pass)
+      if (invitation.status !== 'pending') {
+        const statusMessage = invitation.status === 'accepted' 
+          ? 'This invitation has already been accepted'
+          : invitation.status === 'expired'
+          ? 'This invitation has expired'
+          : `Invitation status: ${invitation.status}`
+        return res.status(400).json({ 
+          error: 'Invitation already used or expired',
+          details: statusMessage,
+          status: invitation.status,
         })
       }
 
