@@ -10,8 +10,7 @@
 
 import { useEffect } from 'react'
 import { getApps } from 'firebase/app'
-import { getAnalytics, isSupported, logEvent } from 'firebase/analytics'
-import app from '../lib/firebase'
+import { isSupported, logEvent } from 'firebase/analytics'
 import { analytics } from '../lib/firebase'
 
 export function DebugAnalytics() {
