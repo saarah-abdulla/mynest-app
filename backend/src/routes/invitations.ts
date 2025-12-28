@@ -150,11 +150,17 @@ router.get(
       email: invitation.email,
       familyName: invitation.family.name,
       expiresAt: invitation.expiresAt.toISOString(),
+      invitationType: (invitation as any).invitationType || 'caregiver', // Default to caregiver for backward compatibility
     }
     
-    // Only include caregiverName for caregiver invitations
+    // Include caregiverName for caregiver invitations
     if (invitation.caregiver) {
       response.caregiverName = invitation.caregiver.fullName
+    }
+    
+    // Include parentName for parent invitations
+    if ((invitation as any).parentName) {
+      response.parentName = (invitation as any).parentName
     }
     
     res.json(response)
@@ -211,11 +217,17 @@ router.get(
       email: invitation.email,
       familyName: invitation.family.name,
       expiresAt: invitation.expiresAt.toISOString(),
+      invitationType: (invitation as any).invitationType || 'caregiver', // Default to caregiver for backward compatibility
     }
     
-    // Only include caregiverName for caregiver invitations
+    // Include caregiverName for caregiver invitations
     if (invitation.caregiver) {
       response.caregiverName = invitation.caregiver.fullName
+    }
+    
+    // Include parentName for parent invitations
+    if ((invitation as any).parentName) {
+      response.parentName = (invitation as any).parentName
     }
     
     res.json(response)

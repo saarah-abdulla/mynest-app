@@ -14,9 +14,11 @@ export function InvitationPage() {
   const [error, setError] = useState<string | null>(null)
   const [invitation, setInvitation] = useState<{
     email: string
-    caregiverName: string
+    caregiverName?: string
+    parentName?: string
     familyName: string
     expiresAt: string
+    invitationType: 'caregiver' | 'parent'
   } | null>(null)
 
   useEffect(() => {
@@ -155,16 +157,23 @@ export function InvitationPage() {
             </div>
             <h1 className="text-3xl font-bold text-brown mb-2">You've been invited!</h1>
             <p className="text-lg text-brown/70">
-              Join <strong>{invitation.familyName}</strong> as a caregiver
+              Join <strong>{invitation.familyName}</strong> as a {invitation.invitationType === 'parent' ? 'parent' : 'caregiver'}
             </p>
           </div>
 
           <div className="bg-background rounded-lg p-6 mb-6">
             <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-brown/70 mb-1">Caregiver Name</p>
-                <p className="text-brown">{invitation.caregiverName}</p>
-              </div>
+              {invitation.invitationType === 'parent' ? (
+                <div>
+                  <p className="text-sm font-semibold text-brown/70 mb-1">Parent Name</p>
+                  <p className="text-brown">{invitation.parentName || invitation.email.split('@')[0]}</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm font-semibold text-brown/70 mb-1">Caregiver Name</p>
+                  <p className="text-brown">{invitation.caregiverName || invitation.email.split('@')[0]}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm font-semibold text-brown/70 mb-1">Email</p>
                 <p className="text-brown">{invitation.email}</p>

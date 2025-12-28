@@ -187,9 +187,11 @@ export const api = {
     id: string
     token: string
     email: string
-    caregiverName: string
+    caregiverName?: string
+    parentName?: string
     familyName: string
     expiresAt: string
+    invitationType: 'caregiver' | 'parent'
   }>(`/invitations/${token}`),
   getInvitationByEmail: (email: string) => request<{
     id: string
