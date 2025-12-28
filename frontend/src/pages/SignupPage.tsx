@@ -54,7 +54,9 @@ export function SignupPage() {
 
     try {
       setLoading(true)
-      const { user } = await signup(email, password, true) // Send verification email
+      // Determine signup source: 'invite' if there's an invitation token, else 'organic'
+      const signupSource: 'invite' | 'organic' = (invitationToken ? 'invite' : 'organic')
+      const { user } = await signup(email, password, true, signupSource) // Send verification email
       
       if (!user) {
         throw new Error('Failed to create user account')
