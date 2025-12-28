@@ -38,31 +38,44 @@ export function FamilyPage() {
   const [loadingParents, setLoadingParents] = useState(false)
 
   // Fetch user role and parents list
-  useEffect(() => {
-    async function fetchUsers() {
-      if (!currentUser) return
-      try {
-        setLoadingParents(true)
-        const users = await api.listUsers()
-        const currentUserData = users.find((u) => u.email === currentUser.email)
-        if (currentUserData) {
-          setUserRole(currentUserData.role)
-        } else {
-          setUserRole('parent') // Default to parent if not found
-        }
-        // Filter to only show parents (users with role='parent')
-        const parentsList = users.filter((u) => u.role === 'parent')
-        setParents(parentsList)
-      } catch (err) {
-        console.error('Error fetching users:', err)
-        setUserRole('parent')
-        setParents([])
-      } finally {
-        setLoadingParents(false)
+  const fetchUsers = async () => {
+    if (!currentUser) return
+    try {
+      setLoadingParents(true)
+      const users = await api.listUsers()
+      const currentUserData = users.find((u) => u.email === currentUser.email)
+      if (currentUserData) {
+        setUserRole(currentUserData.role)
+      } else {
+        setUserRole('parent') // Default to parent if not found
       }
+      // Filter to only show parents (users with role='parent')
+      const parentsList = users.filter((u) => u.role === 'parent')
+      setParents(parentsList)
+    } catch (err) {
+      console.error('Error fetching users:', err)
+      setUserRole('parent')
+      setParents([])
+    } finally {
+      setLoadingParents(false)
     }
+  }
+
+  useEffect(() => {
     fetchUsers()
   }, [currentUser, caregiverModalOpen, inviteParentModalOpen])
+
+  // Refetch parents when window gains focus (e.g., when returning from accepting an invitation)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchUsers()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [currentUser])
 
   const isParent = userRole === 'parent'
 
@@ -690,16 +703,7 @@ export function FamilyPage() {
           onClose={() => setInviteParentModalOpen(false)}
           familyId={family.id}
           onSuccess={() => {
-            // Refetch users to update parents list
-            const fetchUsers = async () => {
-              try {
-                const users = await api.listUsers()
-                const parentsList = users.filter((u) => u.role === 'parent')
-                setParents(parentsList)
-              } catch (err) {
-                console.error('Error fetching users after invitation:', err)
-              }
-            }
+            // Refetch users to update parents list (invitation sent, but parent won't appear until they accept)
             fetchUsers()
           }}
         />
