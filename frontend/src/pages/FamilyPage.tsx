@@ -50,13 +50,6 @@ export function FamilyPage() {
     }
   }, [currentUser, users])
 
-  // Refetch users when caregiver or parent modal closes (similar to caregivers pattern)
-  useEffect(() => {
-    if (!caregiverModalOpen && !inviteParentModalOpen) {
-      refetchUsers()
-    }
-  }, [caregiverModalOpen, inviteParentModalOpen, refetchUsers])
-
   const isParent = userRole === 'parent'
 
   const isLoading = familiesLoading || childrenLoading || caregiversLoading || usersLoading
