@@ -213,7 +213,7 @@ export const api = {
         status: string
         expiresAt: string
       }>('/invitations', { method: 'POST', body: JSON.stringify({ caregiverId }) }),
-  inviteParent: (familyId: string, email: string) =>
+  inviteParent: (familyId: string, email: string, firstName: string, lastName: string) =>
       request<{
         id: string
         token: string
@@ -221,6 +221,6 @@ export const api = {
         status: string
         expiresAt: string
         invitationType: 'parent'
-      }>(`/families/${familyId}/invite-parent`, { method: 'POST', body: JSON.stringify({ email }) }),
+      }>(`/families/${familyId}/invite-parent`, { method: 'POST', body: JSON.stringify({ email, firstName, lastName }) }),
 }
 

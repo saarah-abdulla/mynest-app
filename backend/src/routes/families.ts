@@ -143,11 +143,21 @@ router.post(
       return res.status(403).json({ error: 'Only parents can invite other parents' })
     }
     
-    const { email } = req.body
+    const { email, firstName, lastName } = req.body
     
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid email address is required' })
     }
+    
+    if (!firstName || typeof firstName !== 'string' || !firstName.trim()) {
+      return res.status(400).json({ error: 'First name is required' })
+    }
+    
+    if (!lastName || typeof lastName !== 'string' || !lastName.trim()) {
+      return res.status(400).json({ error: 'Last name is required' })
+    }
+    
+    const parentName = `${firstName.trim()} ${lastName.trim()}`.trim()
     
     // Get family info
     const family = await prisma.family.findUnique({
@@ -193,7 +203,7 @@ router.post(
     
     let invitation
     if (existingInvitation) {
-      // Update existing invitation
+      // Update existing invitation (including parentName)
       invitation = await prisma.invitation.update({
         where: { id: existingInvitation.id },
         data: {
@@ -201,6 +211,7 @@ router.post(
           status: 'pending',
           expiresAt,
           invitedBy: user.id,
+          parentName: parentName, // Update parent name
         },
       })
     } else {
@@ -209,12 +220,13 @@ router.post(
         data: {
           token,
           email: email.toLowerCase(),
+          parentName: parentName, // Store parent name for email and user creation
           familyId: familyId!,
           invitedBy: user.id,
           expiresAt,
           invitationType: 'parent',
           caregiverId: null, // Explicitly null for parent invitations
-        } as any, // Type assertion needed until Prisma client is regenerated with new schema
+        },
       })
     }
     
@@ -225,7 +237,7 @@ router.post(
     try {
       await sendInvitationEmail({
         to: email,
-        parentName: email.split('@')[0], // Use email username as name
+        parentName: parentName, // Use provided name
         familyName: family.name,
         inviterName: inviterUser?.displayName || 'A family member',
         invitationLink,

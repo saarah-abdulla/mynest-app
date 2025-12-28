@@ -322,25 +322,35 @@ router.post(
 
       // Create or update user as parent
       if (!user) {
+        // Use parentName from invitation if available, otherwise fall back to email username
+        const displayName = (invitation as any).parentName || userEmail.split('@')[0]
+        
         // Create new user record with parent role
         user = await prisma.user.create({
           data: {
             firebaseUid: authUser.uid,
             email: userEmail,
-            displayName: userEmail.split('@')[0], // Default to email username
+            displayName: displayName,
             role: 'parent',
             familyId: invitation.familyId,
           },
         })
-        console.log(`[invitations] Created new user ${user.id} with role 'parent' for invitation ${invitation.id}`)
+        console.log(`[invitations] Created new user ${user.id} with role 'parent' and displayName '${displayName}' for invitation ${invitation.id}`)
       } else {
         // Update existing user to be a parent in this family
+        // If invitation has parentName and user's displayName is still email-based, update it
+        const parentName = (invitation as any).parentName
+        const updateData: any = {
+          role: 'parent',
+          familyId: invitation.familyId,
+        }
+        if (parentName && (!user.displayName || user.displayName === userEmail.split('@')[0])) {
+          updateData.displayName = parentName
+        }
+        
         await prisma.user.update({
           where: { id: user.id },
-          data: {
-            role: 'parent',
-            familyId: invitation.familyId,
-          },
+          data: updateData,
         })
         console.log(`[invitations] Updated user ${user.id} to parent role and familyId ${invitation.familyId}`)
       }

@@ -15,12 +15,24 @@ export function InviteParentModal({
   familyId,
   onSuccess,
 }: InviteParentModalProps) {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!firstName.trim()) {
+      setError('First name is required')
+      return
+    }
+
+    if (!lastName.trim()) {
+      setError('Last name is required')
+      return
+    }
     
     if (!email.trim()) {
       setError('Email is required')
@@ -38,8 +50,10 @@ export function InviteParentModal({
     setError(null)
 
     try {
-      await api.inviteParent(familyId, email.trim().toLowerCase())
+      await api.inviteParent(familyId, email.trim().toLowerCase(), firstName.trim(), lastName.trim())
       onSuccess()
+      setFirstName('')
+      setLastName('')
       setEmail('')
       onClose()
     } catch (err: any) {
@@ -51,6 +65,8 @@ export function InviteParentModal({
   }
 
   const handleClose = () => {
+    setFirstName('')
+    setLastName('')
     setEmail('')
     setError(null)
     onClose()
@@ -64,6 +80,39 @@ export function InviteParentModal({
             {error}
           </div>
         )}
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="firstName" className="block text-sm font-semibold text-brown mb-2">
+              First Name <span className="text-red-DEFAULT">*</span>
+            </label>
+            <input
+              id="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="John"
+              required
+              className="w-full px-4 py-3 rounded-lg border border-brown/20 bg-card text-brown placeholder-brown/40 focus:outline-none focus:ring-2 focus:ring-sage focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label htmlFor="lastName" className="block text-sm font-semibold text-brown mb-2">
+              Last Name <span className="text-red-DEFAULT">*</span>
+            </label>
+            <input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Smith"
+              required
+              className="w-full px-4 py-3 rounded-lg border border-brown/20 bg-card text-brown placeholder-brown/40 focus:outline-none focus:ring-2 focus:ring-sage focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+        </div>
 
         <div>
           <label htmlFor="email" className="block text-sm font-semibold text-brown mb-2">

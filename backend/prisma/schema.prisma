@@ -57,6 +57,7 @@ model Invitation {
   token          String     @unique
   email          String
   caregiverId    String?    @unique
+  parentName     String?    // For parent invitations
   familyId       String
   invitedBy      String
   status         String     @default("pending")
