@@ -9,7 +9,7 @@ import admin from 'firebase-admin'
 const router = Router()
 
 const invitationSchema = z.object({
-  caregiverId: z.string().min(1),
+  caregiverId: z.string().min(1).optional(),
 })
 
 // Generate a secure random token
@@ -26,6 +26,10 @@ router.post(
 
     if (!authUser?.uid) {
       return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    if (!caregiverId) {
+      return res.status(400).json({ error: 'caregiverId is required for caregiver invitations' })
     }
 
     // Get caregiver and family info
@@ -70,7 +74,8 @@ router.post(
           status: 'pending',
           expiresAt,
           invitedBy: inviter.id,
-        },
+          invitationType: 'caregiver',
+        } as any, // Type assertion needed until Prisma client is regenerated
       })
     } else {
       // Create new invitation
@@ -82,7 +87,8 @@ router.post(
           familyId: caregiver.familyId,
           invitedBy: inviter.id,
           expiresAt,
-        },
+          invitationType: 'caregiver',
+        } as any, // Type assertion needed until Prisma client is regenerated
       })
     }
 
@@ -96,6 +102,7 @@ router.post(
         familyName: caregiver.family.name,
         inviterName: inviter.displayName,
         invitationLink,
+        invitationType: 'caregiver',
       })
     } catch (error) {
       console.error('Failed to send invitation email:', error)
@@ -119,21 +126,11 @@ router.get(
   '/email/:email',
   asyncHandler(async (req: Request, res: Response) => {
     const { email } = req.params
-    const authUser = (req as Request & { user?: { uid: string } }).user
 
-    if (!authUser?.uid) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-
-    // Decode the email parameter
-    const decodedEmail = decodeURIComponent(email).toLowerCase()
-
-    // Find pending invitation for this email
     const invitation = await prisma.invitation.findFirst({
       where: {
-        email: decodedEmail,
+        email: email.toLowerCase(),
         status: 'pending',
-        expiresAt: { gt: new Date() },
       },
       include: {
         caregiver: true,
@@ -146,14 +143,21 @@ router.get(
       return res.status(404).json({ error: 'No pending invitation found for this email' })
     }
 
-    res.json({
+    // Return invitation details (caregiver may be null for parent invitations)
+    const response: any = {
       id: invitation.id,
       token: invitation.token,
       email: invitation.email,
-      caregiverName: invitation.caregiver.fullName,
       familyName: invitation.family.name,
       expiresAt: invitation.expiresAt.toISOString(),
-    })
+    }
+    
+    // Only include caregiverName for caregiver invitations
+    if (invitation.caregiver) {
+      response.caregiverName = invitation.caregiver.fullName
+    }
+    
+    res.json(response)
   }),
 )
 
@@ -200,18 +204,25 @@ router.get(
       })
     }
 
-    res.json({
+    // Return invitation details (caregiver may be null for parent invitations)
+    const response: any = {
       id: invitation.id,
       token: invitation.token,
       email: invitation.email,
-      caregiverName: invitation.caregiver.fullName,
       familyName: invitation.family.name,
       expiresAt: invitation.expiresAt.toISOString(),
-    })
+    }
+    
+    // Only include caregiverName for caregiver invitations
+    if (invitation.caregiver) {
+      response.caregiverName = invitation.caregiver.fullName
+    }
+    
+    res.json(response)
   }),
 )
 
-// Accept invitation (link user account to caregiver)
+// Accept invitation (link user account to caregiver OR add user as parent)
 router.post(
   '/:token/accept',
   asyncHandler(async (req: Request, res: Response) => {
@@ -224,7 +235,7 @@ router.post(
 
     const invitation = await prisma.invitation.findUnique({
       where: { token },
-      include: { caregiver: true },
+      include: { caregiver: true, family: true },
     })
 
     if (!invitation) {
@@ -243,48 +254,10 @@ router.post(
       })
     }
 
-    // Find existing user record first (if they already have an account)
-    let user = await prisma.user.findUnique({
-      where: { firebaseUid: authUser.uid },
-    })
-
-    // Check if caregiver is already linked to this user (idempotency check)
-    // This allows re-accepting if already linked, even if status is 'accepted'
-    const caregiver = await prisma.caregiver.findUnique({
-      where: { id: invitation.caregiverId },
-    })
-
-    if (caregiver && caregiver.userId === user?.id) {
-      // User is already linked to this caregiver - invitation was already accepted
-      // Mark invitation as accepted if it's still pending (idempotency)
-      if (invitation.status === 'pending') {
-        await prisma.invitation.update({
-          where: { id: invitation.id },
-          data: { status: 'accepted' },
-        })
-      }
-      return res.json({
-        message: 'Invitation already linked successfully',
-        caregiverId: invitation.caregiverId,
-        familyId: invitation.familyId,
-      })
-    }
-
-    // Now check invitation status (but only if not already linked)
+    // Check invitation status
     if (invitation.status !== 'pending') {
-      // Log detailed info for debugging
-      console.log('[invitations] Invitation status check failed:', {
-        token,
-        status: invitation.status,
-        caregiverId: invitation.caregiverId,
-        caregiverUserId: caregiver?.userId,
-        userExists: !!user,
-        userId: user?.id,
-        expiresAt: invitation.expiresAt,
-      })
-      
       const statusMessage = invitation.status === 'accepted' 
-        ? 'This invitation has already been accepted by another user'
+        ? 'This invitation has already been accepted'
         : invitation.status === 'expired'
         ? 'This invitation has expired'
         : `Invitation status: ${invitation.status}`
@@ -295,10 +268,17 @@ router.post(
       })
     }
 
+    // Determine invitation type (default to 'caregiver' for backward compatibility)
+    const invitationType = (invitation as any).invitationType || 'caregiver'
+
+    // Find existing user record first (if they already have an account)
+    let user = await prisma.user.findUnique({
+      where: { firebaseUid: authUser.uid },
+    })
+
     // Try to get email - prefer database user email, fallback to Firebase, then invitation email
     let userEmail: string
     if (user) {
-      // User already exists - use their database email
       userEmail = user.email
     } else {
       // New user - try to get email from Firebase Admin SDK, fallback to invitation email
@@ -307,8 +287,6 @@ router.post(
         const firebaseUser = await admin.auth().getUser(authUser.uid)
         firebaseUserEmail = firebaseUser.email || null
       } catch (err: any) {
-        // Firebase Admin SDK error - likely credential issue, but we can still proceed
-        // We'll use the invitation email as fallback
         if (err?.code?.includes('credential') || err?.codePrefix === 'app') {
           console.warn('[invitations] Could not fetch Firebase user email (credential issue), using invitation email instead')
         } else {
@@ -325,42 +303,91 @@ router.post(
       })
     }
 
-    if (!user) {
-      // User record doesn't exist, create it
-
-      // Create user record
-      user = await prisma.user.create({
-        data: {
-          firebaseUid: authUser.uid,
-          email: userEmail,
-          displayName: userEmail.split('@')[0], // Default to email username
-          role: 'caregiver', // Set as caregiver since they're accepting an invitation
+    // Handle parent invitations
+    if (invitationType === 'parent') {
+      // Check if user is already a parent in this family (idempotency check)
+      if (user && user.familyId === invitation.familyId && user.role === 'parent') {
+        // User is already a parent in this family - invitation was already accepted
+        if (invitation.status === 'pending') {
+          await prisma.invitation.update({
+            where: { id: invitation.id },
+            data: { status: 'accepted' },
+          })
+        }
+        return res.json({
+          message: 'Invitation already accepted - you are already a parent in this family',
           familyId: invitation.familyId,
-        },
-      })
-    } else {
-      // User exists, verify email matches invitation
-      if (user.email.toLowerCase() !== invitation.email.toLowerCase()) {
-        return res.status(400).json({ 
-          error: `Email mismatch. Invitation is for ${invitation.email}, but your account email is ${user.email}` 
         })
       }
-      // Ensure the user role is set to caregiver (in case they were created as parent first)
-      // This will be updated again below, but set it here to ensure consistency
-      if (user.role !== 'caregiver') {
+
+      // Create or update user as parent
+      if (!user) {
+        // Create new user record with parent role
+        user = await prisma.user.create({
+          data: {
+            firebaseUid: authUser.uid,
+            email: userEmail,
+            displayName: userEmail.split('@')[0], // Default to email username
+            role: 'parent',
+            familyId: invitation.familyId,
+          },
+        })
+        console.log(`[invitations] Created new user ${user.id} with role 'parent' for invitation ${invitation.id}`)
+      } else {
+        // Update existing user to be a parent in this family
         await prisma.user.update({
           where: { id: user.id },
-          data: { role: 'caregiver' },
+          data: {
+            role: 'parent',
+            familyId: invitation.familyId,
+          },
         })
+        console.log(`[invitations] Updated user ${user.id} to parent role and familyId ${invitation.familyId}`)
       }
+
+      // Mark invitation as accepted
+      await prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { status: 'accepted' },
+      })
+
+      return res.json({
+        message: 'Parent invitation accepted successfully',
+        familyId: invitation.familyId,
+      })
     }
 
-    // Caregiver was already fetched above, verify it exists
+    // Handle caregiver invitations (existing logic)
+    const caregiverId = invitation.caregiverId
+    if (!caregiverId) {
+      return res.status(400).json({ error: 'Invalid invitation: caregiver invitation must have caregiverId' })
+    }
+
+    // Check if caregiver is already linked to this user (idempotency check)
+    const caregiver = await prisma.caregiver.findUnique({
+      where: { id: caregiverId },
+    })
+
+    if (caregiver && caregiver.userId === user?.id) {
+      // User is already linked to this caregiver - invitation was already accepted
+      if (invitation.status === 'pending') {
+        await prisma.invitation.update({
+          where: { id: invitation.id },
+          data: { status: 'accepted' },
+        })
+      }
+      return res.json({
+        message: 'Invitation already linked successfully',
+        caregiverId: caregiverId,
+        familyId: invitation.familyId,
+      })
+    }
+
     if (!caregiver) {
       return res.status(404).json({ error: 'Caregiver not found' })
     }
 
-    if (caregiver.userId && caregiver.userId !== user.id) {
+    if (caregiver.userId && caregiver.userId !== user?.id) {
       // Caregiver is already linked to a different user
       return res.status(400).json({ 
         error: 'This invitation has already been accepted by another user',
@@ -368,19 +395,34 @@ router.post(
       })
     }
 
+    // Create or update user record
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          firebaseUid: authUser.uid,
+          email: userEmail,
+          displayName: userEmail.split('@')[0], // Default to email username
+          role: 'caregiver',
+          familyId: invitation.familyId,
+        },
+      })
+      console.log(`[invitations] Created new user ${user.id} with role 'caregiver' for invitation ${invitation.id}`)
+    } else {
+      // Update existing user to be a caregiver
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          role: 'caregiver',
+          familyId: invitation.familyId,
+        },
+      })
+      console.log(`[invitations] Updated user ${user.id} to caregiver role and familyId ${invitation.familyId}`)
+    }
+
     // Link user to caregiver
     await prisma.caregiver.update({
-      where: { id: invitation.caregiverId },
+      where: { id: caregiverId },
       data: { userId: user.id },
-    })
-
-    // Update user to have caregiver role and familyId
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        role: 'caregiver',
-        familyId: invitation.familyId,
-      },
     })
 
     // Mark invitation as accepted
@@ -391,11 +433,10 @@ router.post(
 
     res.json({
       message: 'Invitation accepted successfully',
-      caregiverId: invitation.caregiverId,
+      caregiverId: caregiverId,
       familyId: invitation.familyId,
     })
   }),
 )
 
 export default router
-

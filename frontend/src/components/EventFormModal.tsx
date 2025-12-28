@@ -14,9 +14,7 @@ interface EventFormModalProps {
 
 const scheduleCategories = [
   'school',
-  'activity',
   'medical',
-  'appointment',
   'social',
   'other',
 ] as const
@@ -33,7 +31,7 @@ export function EventFormModal({
   const [error, setError] = useState<string | null>(null)
 
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState<ScheduleEntry['category']>('activity')
+  const [category, setCategory] = useState<ScheduleEntry['category']>('school')
   const [childId, setChildId] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -52,7 +50,7 @@ export function EventFormModal({
       setNotes(event.notes || '')
     } else {
       setTitle('')
-      setCategory('activity')
+      setCategory('school')
       setChildId(children[0]?.id || '')
       setDate('')
       setTime('')

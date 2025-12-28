@@ -206,12 +206,21 @@ export const api = {
       familyId: string
     }>(`/invitations/${token}/accept`, { method: 'POST' }),
   sendInvitation: (caregiverId: string) =>
-    request<{
-      id: string
-      token: string
-      email: string
-      status: string
-      expiresAt: string
-    }>('/invitations', { method: 'POST', body: JSON.stringify({ caregiverId }) }),
+      request<{
+        id: string
+        token: string
+        email: string
+        status: string
+        expiresAt: string
+      }>('/invitations', { method: 'POST', body: JSON.stringify({ caregiverId }) }),
+  inviteParent: (familyId: string, email: string) =>
+      request<{
+        id: string
+        token: string
+        email: string
+        status: string
+        expiresAt: string
+        invitationType: 'parent'
+      }>(`/families/${familyId}/invite-parent`, { method: 'POST', body: JSON.stringify({ email }) }),
 }
 

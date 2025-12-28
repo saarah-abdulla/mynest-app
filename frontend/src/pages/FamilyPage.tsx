@@ -5,10 +5,11 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { ChildFormModal } from '../components/ChildFormModal'
 import { CaregiverFormModal } from '../components/CaregiverFormModal'
+import { InviteParentModal } from '../components/InviteParentModal'
 import { api } from '../lib/api'
 import { formatDateDDMMYYYY } from '../lib/dateUtils'
 import { useAuth } from '../contexts/AuthContext'
-import type { Child, Caregiver } from '../types/entities'
+import type { Child, Caregiver, User } from '../types/entities'
 
 export function FamilyPage() {
   const { currentUser } = useAuth()
@@ -26,18 +27,22 @@ export function FamilyPage() {
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
   const [caregiverModalOpen, setCaregiverModalOpen] = useState(false)
   const [selectedCaregiver, setSelectedCaregiver] = useState<Caregiver | null>(null)
+  const [inviteParentModalOpen, setInviteParentModalOpen] = useState(false)
   const [sendingInvitation, setSendingInvitation] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<'parent' | 'caregiver' | null>(null)
   const [editingFamily, setEditingFamily] = useState(false)
   const [familyNameInput, setFamilyNameInput] = useState('')
   const [regionInput, setRegionInput] = useState('')
   const [timezoneInput, setTimezoneInput] = useState('')
+  const [parents, setParents] = useState<User[]>([])
+  const [loadingParents, setLoadingParents] = useState(false)
 
-  // Fetch user role
+  // Fetch user role and parents list
   useEffect(() => {
-    async function fetchUserRole() {
+    async function fetchUsers() {
       if (!currentUser) return
       try {
+        setLoadingParents(true)
         const users = await api.listUsers()
         const currentUserData = users.find((u) => u.email === currentUser.email)
         if (currentUserData) {
@@ -45,13 +50,19 @@ export function FamilyPage() {
         } else {
           setUserRole('parent') // Default to parent if not found
         }
+        // Filter to only show parents (users with role='parent')
+        const parentsList = users.filter((u) => u.role === 'parent')
+        setParents(parentsList)
       } catch (err) {
-        console.error('Error fetching user role:', err)
+        console.error('Error fetching users:', err)
         setUserRole('parent')
+        setParents([])
+      } finally {
+        setLoadingParents(false)
       }
     }
-    fetchUserRole()
-  }, [currentUser])
+    fetchUsers()
+  }, [currentUser, caregiverModalOpen, inviteParentModalOpen])
 
   const isParent = userRole === 'parent'
 
@@ -303,8 +314,8 @@ export function FamilyPage() {
           </div>
         </div>
 
-        {/* Two Cards Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Three Cards: Children, Parents, Caregivers */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Children Card */}
           <div className="rounded-2xl border border-brown/10 bg-card p-6 shadow-card">
             <div className="mb-6 flex items-center justify-between">
@@ -410,6 +421,89 @@ export function FamilyPage() {
                     className="px-4 py-2 rounded-lg bg-sage text-white font-semibold hover:bg-sage-dark transition-colors"
                   >
                     Add Your First Child
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Parents Card */}
+          <div className="rounded-2xl border border-brown/10 bg-card p-6 shadow-card">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-brown">Parents</h2>
+                <p className="text-sm text-brown/70">Family administrators</p>
+              </div>
+              {isParent && (
+                <button
+                  onClick={() => setInviteParentModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-sage text-white font-semibold hover:bg-sage-dark transition-colors"
+                  title="Invite another parent"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                    />
+                  </svg>
+                  Invite Parent
+                </button>
+              )}
+            </div>
+
+            {loadingParents ? (
+              <div className="text-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : parents.length > 0 ? (
+              <div className="space-y-4">
+                {parents.map((parent) => {
+                  const initials = parent.displayName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)
+                  return (
+                    <div
+                      key={parent.id}
+                      className="flex items-start justify-between p-4 bg-background rounded-lg"
+                    >
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sage text-white font-semibold">
+                          {initials}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-brown text-lg">{parent.displayName}</p>
+                          <p className="text-sm text-brown/70 mt-1">{parent.email}</p>
+                          {parent.phone && (
+                            <p className="text-sm text-brown/70 mt-1">{parent.phone}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-brown/70 mb-4">No parents found</p>
+                {isParent && (
+                  <button
+                    onClick={() => setInviteParentModalOpen(true)}
+                    className="flex items-center gap-2 px-6 py-3 rounded-lg bg-sage text-white font-semibold hover:bg-sage-dark transition-colors mx-auto"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                      />
+                    </svg>
+                    Invite a Parent
                   </button>
                 )}
               </div>
@@ -589,6 +683,27 @@ export function FamilyPage() {
           refetchCaregivers()
         }}
       />
+
+      {family && (
+        <InviteParentModal
+          isOpen={inviteParentModalOpen}
+          onClose={() => setInviteParentModalOpen(false)}
+          familyId={family.id}
+          onSuccess={() => {
+            // Refetch users to update parents list
+            const fetchUsers = async () => {
+              try {
+                const users = await api.listUsers()
+                const parentsList = users.filter((u) => u.role === 'parent')
+                setParents(parentsList)
+              } catch (err) {
+                console.error('Error fetching users after invitation:', err)
+              }
+            }
+            fetchUsers()
+          }}
+        />
+      )}
     </div>
   )
 }

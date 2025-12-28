@@ -49,14 +49,17 @@ if (!isSMTPConfigured) {
 
 export interface InvitationEmailData {
   to: string
-  caregiverName: string
+  caregiverName?: string // Optional for parent invitations
+  parentName?: string // For parent invitations
   familyName: string
   inviterName: string
   invitationLink: string
+  invitationType?: 'caregiver' | 'parent' // Default to 'caregiver' for backward compatibility
 }
 
 export async function sendInvitationEmail(data: InvitationEmailData): Promise<void> {
-  const { to, caregiverName, familyName, inviterName, invitationLink } = data
+  const { to, caregiverName, parentName, familyName, inviterName, invitationLink, invitationType = 'caregiver' } = data
+  const recipientName = invitationType === 'parent' ? (parentName || to.split('@')[0]) : caregiverName || to.split('@')[0]
 
   // Check if SMTP is configured
   if (!isSMTPConfigured) {
@@ -163,10 +166,10 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
             </div>
             <h1>You've been invited!</h1>
             <div class="content">
-              <p>Hi ${caregiverName},</p>
+              <p>Hi ${recipientName},</p>
               <p>
                 <strong>${inviterName}</strong> has invited you to join <strong>${familyName}</strong> 
-                as a caregiver on <strong>MyNest</strong>, a platform for coordinating childcare.
+                ${invitationType === 'parent' ? 'as a parent' : 'as a caregiver'} on <strong>MyNest</strong>, a platform for coordinating childcare.
               </p>
               <p>
                 Click the button below to accept the invitation and create your account:
@@ -191,9 +194,9 @@ export async function sendInvitationEmail(data: InvitationEmailData): Promise<vo
       </html>
     `,
     text: `
-      Hi ${caregiverName},
+      Hi ${recipientName},
 
-      ${inviterName} has invited you to join ${familyName} as a caregiver on MyNest.
+      ${inviterName} has invited you to join ${familyName} ${invitationType === 'parent' ? 'as a parent' : 'as a caregiver'} on MyNest.
 
       Click the link below to accept the invitation and create your account:
       ${invitationLink}

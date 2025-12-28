@@ -53,21 +53,23 @@ model Caregiver {
 }
 
 model Invitation {
-  id          String    @id @default(cuid())
-  token       String    @unique
-  email       String
-  caregiverId String    @unique
-  familyId    String
-  invitedBy   String
-  status      String    @default("pending")
-  expiresAt   DateTime
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  family      Family    @relation(fields: [familyId], references: [id])
+  id             String     @id @default(cuid())
+  token          String     @unique
+  email          String
+  caregiverId    String?    @unique
+  familyId       String
+  invitedBy      String
+  status         String     @default("pending")
+  expiresAt      DateTime
+  invitationType String     @default("caregiver") // "caregiver" or "parent"
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  caregiver      Caregiver? @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  family         Family     @relation(fields: [familyId], references: [id])
 
   @@index([token])
   @@index([email])
+  @@index([invitationType])
 }
 
 model Child {
